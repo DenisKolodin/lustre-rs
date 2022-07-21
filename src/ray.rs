@@ -89,3 +89,19 @@ impl Ray {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn no_distance() {
+        let r = Ray::new(Vec3A::ZERO, Vec3A::Z, 0.0);
+        let result = r.at(0.0);
+        assert_eq!(
+            r.origin, result,
+            "Ray starting at {} did not return {} when computing .at(0.0), position was {}",
+            r.origin, r.origin, result
+        )
+    }
+}
