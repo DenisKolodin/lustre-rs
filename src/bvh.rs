@@ -14,8 +14,11 @@ use crate::{
 ///
 /// Holds the bounding box that contains the two [Hittable] children
 pub struct BvhNode {
+    /// left portion of the subhierarchy
     left: Arc<dyn Hittable>,
+    /// right portion of the subhierarchy
     right: Arc<dyn Hittable>,
+    /// AABB of the current hierarchy 
     bbox: BoundingBox,
 }
 
