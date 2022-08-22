@@ -18,7 +18,7 @@ pub struct BvhNode {
     left: Arc<dyn Hittable>,
     /// right portion of the subhierarchy
     right: Arc<dyn Hittable>,
-    /// AABB of the current hierarchy 
+    /// AABB of the current hierarchy
     bbox: BoundingBox,
 }
 
