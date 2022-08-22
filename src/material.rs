@@ -64,8 +64,8 @@ impl Material {
             Material::Isotropic { albedo } => {
                 // returns a random unit direction
                 let scattered = Ray::new(rec.point, rand_unit_v, ray.time);
-                let attenutation = albedo.color(rec.u, rec.v, rec.point).into();
-                Some((scattered, attenutation))
+                let attenuation = albedo.color(rec.u, rec.v, rec.point).into();
+                Some((scattered, attenuation))
             }
             Material::Lambertian { albedo } => {
                 let mut scatter_dir = rec.normal + rand_unit_v;
