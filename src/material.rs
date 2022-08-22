@@ -36,6 +36,15 @@ pub enum Material {
     Isotropic { albedo: Arc<dyn Texture> },
 }
 
+/// Set of data returned on a [Material]'s scattering
+#[derive(Debug)]
+pub struct ScatterRecord {
+    /// The resultant ray for subsequent intersections
+    pub ray: Ray,
+    /// The attenuation at the point of intersection
+    pub attenuation: Vec3A,
+}
+
 impl Material {
     /// Computes reflectance using Schlick's approximation
     fn reflectance(cosine: f32, refract_idx: f32) -> f32 {
@@ -47,7 +56,7 @@ impl Material {
     /// Returns a scattered ray and its attenuation based on the specific material type.
     ///
     /// Returns `None` if the material type computes a lack of scattering
-    pub fn scatter(&self, ray: &Ray, rec: &HitRecord, rng: &mut impl Rng) -> Option<(Ray, Vec3A)> {
+    pub fn scatter(&self, ray: &Ray, rec: &HitRecord, rng: &mut impl Rng) -> Option<ScatterRecord> {
         // common calcs
         let normed_dir = ray.direction.normalize();
         let rand_unit_v = crate::utils::random::rand_vec3_in_unit_sphere(rng);
@@ -116,6 +125,7 @@ impl Material {
             }
             Material::DiffuseLight { .. } => None,
         }
+        .map(|(ray, attenuation)| ScatterRecord { ray, attenuation })
     }
 
     /// Returns the emmited color of light from the material, if any.
