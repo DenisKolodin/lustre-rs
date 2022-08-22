@@ -6,6 +6,7 @@ use noise::NoiseFn;
 use super::Texture;
 use crate::color::Color;
 
+/// A [noise::NoiseFn]-based texture 
 #[derive(Debug)]
 pub struct NoiseTexture<N>
 where
