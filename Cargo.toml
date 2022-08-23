@@ -11,10 +11,10 @@ readme = "README.md"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-glam = { version = "0.21.2", features = ["debug-glam-assert", "rand"] }
 clap = { version = "3.2.14", features = ["derive", "wrap_help"] }
-indicatif = { version = "0.17.0", features = ["rayon"]}
+glam = { version = "0.21.2", features = ["debug-glam-assert", "rand"] }
 image = "0.24.3"
+indicatif = { version = "0.17.0", features = ["rayon"]}
 noise = "0.7.0"
 num-traits = "0.2.15"
 rand = { version = "0.8.5", features = ["small_rng"] }
