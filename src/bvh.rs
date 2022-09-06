@@ -23,7 +23,7 @@ pub struct BvhNode {
 }
 
 /// Compares two bounding boxes based on existence and then along the given axis
-fn box_cmp(a: &Option<BoundingBox>, b: &Option<BoundingBox>, axis_idx: usize) -> Ordering {
+pub fn box_cmp(a: &Option<BoundingBox>, b: &Option<BoundingBox>, axis_idx: usize) -> Ordering {
     match (a, b) {
         (None, None) => {
             panic!("box_cmp encountered two unbounded objects");

@@ -19,6 +19,7 @@ mod render;
 mod scatter;
 mod scenes;
 mod textures;
+mod tree;
 mod utils;
 
 fn main() {
