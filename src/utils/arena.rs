@@ -26,14 +26,14 @@ impl<T> Arena<T> {
         index
     }
 
-    // /// Returns a reference to the [ArenaNode] at the provided index.
-    // ///
-    // /// # Panics
-    // ///
-    // /// Panics if the position is out of bounds.
-    // pub fn get(&self, index: ArenaIndex) -> &ArenaNode<T> {
-    //     &self.store[index]
-    // }
+    /// Returns a reference to the [ArenaNode] at the provided index.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the position is out of bounds.
+    pub fn get(&self, index: ArenaIndex) -> &ArenaNode<T> {
+        &self.store[index]
+    }
 }
 
 impl<T> std::ops::Index<ArenaIndex> for Arena<T> {

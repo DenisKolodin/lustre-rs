@@ -42,7 +42,7 @@ where
     }
 
     fn get_bbox(&self, idx: ArenaIndex, time0: f32, time1: f32) -> Option<BoundingBox> {
-        match &self.arena[idx] {
+        match self.arena.get(idx) {
             Some(node) => match node {
                 TreeNode::Leaf(item) => item.bounding_box(time0, time1),
                 TreeNode::Interior { bbox, .. } => *bbox,
