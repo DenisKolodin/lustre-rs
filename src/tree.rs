@@ -114,6 +114,9 @@ where
     pub fn with_items(items: Vec<T>, time0: f32, time1: f32, rng: &mut impl Rng) -> Self {
         // TODO find way to create Tree without making an empty one first
         let mut tree = Self::new();
+        // We hope for a best case full binary tree and allocate enough space
+        // for such a case, minimizing allocations per-insertion
+        // See [Properties of binary trees from the Binary Tree Wikipedia article](https://en.wikipedia.org/wiki/Binary_tree#Properties_of_binary_trees)
         tree.arena = Arena::with_capacity((items.len() * 2) - 1);
 
         // Compute info per item
