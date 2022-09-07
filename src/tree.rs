@@ -1,3 +1,5 @@
+use rand::{prelude::IteratorRandom, Rng};
+
 use crate::{
     bounds::BoundingBox,
     hittables::Hittable,
@@ -79,7 +81,13 @@ where
         }
     }
 
-    fn new_interior(&mut self, items: &mut [ItemInfo<T>], time0: f32, time1: f32) -> ArenaIndex {
+    fn new_interior(
+        &mut self,
+        items: &mut [ItemInfo<T>],
+        time0: f32,
+        time1: f32,
+        rng: &mut impl Rng,
+    ) -> ArenaIndex {
         assert!(!items.is_empty(), "Given empty scene!");
         let num_items = items.len();
 
@@ -87,12 +95,12 @@ where
             return self.new_leaf(items[0].clone());
         }
 
-        let axis_idx = 0; // temporary
+        let axis_idx = (0..3).choose(rng).unwrap(); // temporary
         items.sort_by(|a, b| crate::bvh::box_cmp(&a.bbox, &b.bbox, axis_idx));
 
         let (left_items, right_items) = items.split_at_mut(num_items / 2);
-        let left_node = self.new_interior(left_items, time0, time1);
-        let right_node = self.new_interior(right_items, time0, time1);
+        let left_node = self.new_interior(left_items, time0, time1, rng);
+        let right_node = self.new_interior(right_items, time0, time1, rng);
 
         let bbox = self.compute_bbox(Some(left_node), Some(right_node), time0, time1);
 
@@ -103,7 +111,7 @@ where
         })
     }
 
-    pub fn with_items(items: Vec<T>, time0: f32, time1: f32) -> Self {
+    pub fn with_items(items: Vec<T>, time0: f32, time1: f32, rng: &mut impl Rng) -> Self {
         // TODO find way to create Tree without making an empty one first
         let mut tree = Self::new();
         tree.arena = Arena::with_capacity((items.len() * 2) - 1);
@@ -118,7 +126,7 @@ where
             .collect();
 
         // create tree and get root index
-        let root = tree.new_interior(&mut added_info, time0, time1);
+        let root = tree.new_interior(&mut added_info, time0, time1, rng);
 
         // finish modifying the formerly empty tree
         tree.root = Some(root);
