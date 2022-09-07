@@ -124,4 +124,87 @@ where
         tree.root = Some(root);
         tree
     }
+
+    fn hit_impl(
+        &self,
+        idx: ArenaIndex,
+        ray: &crate::ray::Ray,
+        t_min: f32,
+        t_max: f32,
+    ) -> Option<crate::hittables::HitRecord> {
+        // need a private impl because we need recursion w/ indices
+        let node = self.arena.get(idx);
+        match node {
+            Some(node) => match node {
+                // a leaf node delegates to its contained item
+                TreeNode::Leaf(item) => item.hit(ray, t_min, t_max),
+                TreeNode::Interior { bbox, left, right } => {
+                    // if there's a box, check against it first
+                    if let Some(bbox) = bbox {
+                        if !bbox.hit(ray, t_min, t_max) {
+                            return None;
+                        }
+                    }
+
+                    // recurse into children
+                    match (left, right) {
+                        // no children, no intersection
+                        (None, None) => None,
+                        // one child uses the child's hit result
+                        (None, Some(right)) => self.hit_impl(*right, ray, t_min, t_max),
+                        (Some(left), None) => self.hit_impl(*left, ray, t_min, t_max),
+                        // use the closer of the two children's hit results
+                        (Some(left), Some(right)) => {
+                            let left_hit = self.hit_impl(*left, ray, t_min, t_max);
+
+                            let t_max = match &left_hit {
+                                Some(rec) => rec.t,
+                                None => t_max,
+                            };
+
+                            let right_hit = self.hit_impl(*right, ray, t_min, t_max);
+                            match (left_hit, right_hit) {
+                                (None, None) => None,
+                                (None, Some(r_rec)) => Some(r_rec),
+                                (Some(l_rec), None) => Some(l_rec),
+                                (Some(l_rec), Some(r_rec)) => {
+                                    if l_rec.t < r_rec.t {
+                                        Some(l_rec)
+                                    } else {
+                                        Some(r_rec)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            // no node, no intersection
+            None => None,
+        }
+    }
+}
+
+impl<T> Hittable for Tree<T>
+where
+    T: Clone + Hittable + Sized,
+{
+    fn hit(
+        &self,
+        ray: &crate::ray::Ray,
+        t_min: f32,
+        t_max: f32,
+    ) -> Option<crate::hittables::HitRecord> {
+        match self.root {
+            Some(root_idx) => self.hit_impl(root_idx, ray, t_min, t_max),
+            None => None,
+        }
+    }
+
+    fn bounding_box(&self, time0: f32, time1: f32) -> Option<BoundingBox> {
+        match self.root {
+            Some(root_idx) => self.get_bbox(root_idx, time0, time1),
+            None => None,
+        }
+    }
 }
