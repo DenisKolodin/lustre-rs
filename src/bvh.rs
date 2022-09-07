@@ -49,16 +49,13 @@ impl BvhNode {
         time1: f32,
         rng: &mut impl Rng,
     ) -> Self {
-        if hitlist.is_empty() {
-            panic!("Given empty scene!");
-        }
+        assert!(!hitlist.is_empty(), "Given empty scene!");
 
         let span = hitlist.len();
-        let start = 0;
 
         let (left, right) = match span {
-            1 => (hitlist[start].clone(), hitlist[start].clone()),
-            2 => (hitlist[start].clone(), hitlist[start + 1].clone()),
+            1 => (hitlist[0].clone(), hitlist[0].clone()),
+            2 => (hitlist[0].clone(), hitlist[1].clone()),
             _ => {
                 // TODO implement better axis decision-making
                 let axis_idx = (0..3).choose(rng).unwrap();
