@@ -62,6 +62,20 @@ impl BoundingBox {
             max: self.max.max(other.max),
         }
     }
+
+    pub fn diagonal(&self) -> Vec3A {
+        self.max - self.min
+    }
+
+    pub fn surface_area(&self) -> f32 {
+        let d = self.diagonal();
+        2.0 * (d.x * d.y + d.x * d.z + d.y * d.z)
+    }
+
+    pub fn volume(&self) -> f32 {
+        let d = self.diagonal();
+        d.x * d.y * d.z
+    }
 }
 
 impl Default for BoundingBox {
