@@ -13,8 +13,11 @@ pub struct BoundingBox {
 
 impl BoundingBox {
     /// Creates a new Axis aligned bounding box
-    pub fn new(min: Vec3A, max: Vec3A) -> Self {
-        Self { min, max }
+    pub fn new(p0: Vec3A, p1: Vec3A) -> Self {
+        Self {
+            min: p0.min(p1),
+            max: p0.max(p1),
+        }
     }
 
     /// Returns whether or not the ray hits this bounding box.
@@ -54,9 +57,10 @@ impl BoundingBox {
     /// * the minimums of the two boxes' min members
     /// * the maximums of the two boxes' max members
     pub fn union(&self, other: &BoundingBox) -> BoundingBox {
-        let min = self.min.min(other.min);
-        let max = self.max.max(other.max);
-        Self { min, max }
+        Self {
+            min: self.min.min(other.min),
+            max: self.max.max(other.max),
+        }
     }
 }
 
