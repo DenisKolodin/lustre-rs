@@ -163,10 +163,10 @@ where
             count: 0,
             bbox: BoundingBox::default(),
         };
-        for bin in (0..(NUM_BINS - 1)).rev() {
+        for bin in (1..=(NUM_BINS - 1)).rev() {
             right_bin_acc.bbox = right_bin_acc.bbox.union(&(bins[bin].bbox));
             right_bin_acc.count += bins[bin].count;
-            costs[bin] += right_bin_acc.count as f32 * right_bin_acc.bbox.surface_area();
+            costs[bin - 1] += right_bin_acc.count as f32 * right_bin_acc.bbox.surface_area();
         }
 
         items.sort_by(|a, b| crate::bvh::box_cmp(&a.bbox, &b.bbox, axis_idx));
