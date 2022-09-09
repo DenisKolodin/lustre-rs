@@ -63,6 +63,13 @@ impl BoundingBox {
         }
     }
 
+    pub fn add_point(&self, point: Vec3A) -> BoundingBox {
+        Self {
+            min: self.min.min(point),
+            max: self.max.max(point),
+        }
+    }
+
     pub fn diagonal(&self) -> Vec3A {
         self.max - self.min
     }
@@ -86,6 +93,14 @@ impl BoundingBox {
         } else {
             2
         }
+    }
+
+    pub fn offset(&self, point: Vec3A) -> Vec3A {
+        (point - self.min) / self.diagonal()
+    }
+
+    pub fn centroid(&self) -> Vec3A {
+        0.5 * (self.min + self.max)
     }
 }
 
