@@ -95,7 +95,15 @@ where
             return self.new_leaf(items[0].clone());
         }
 
-        let axis_idx = (0..3).choose(rng).unwrap(); // temporary
+        // Get bounding_box for all item under this node
+        let total_bbox: BoundingBox = items
+            .iter()
+            .filter_map(|info| info.bbox)
+            .reduce(|acc, item| acc.union(&item))
+            .unwrap();
+
+        let axis_idx = total_bbox.longest_axis();
+
         items.sort_by(|a, b| crate::bvh::box_cmp(&a.bbox, &b.bbox, axis_idx));
 
         let (left_items, right_items) = items.split_at_mut(num_items / 2);
