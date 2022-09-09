@@ -24,6 +24,13 @@ pub struct Tree<T> {
 struct ItemInfo<T> {
     item: T,
     bbox: Option<BoundingBox>,
+    centroid: Option<glam::Vec3A>,
+}
+
+#[derive(Debug, Clone, Copy)]
+struct Bin {
+    count: usize,
+    bbox: BoundingBox,
 }
 
 impl<T> Tree<T>
@@ -88,13 +95,72 @@ where
         }
 
         // Get bounding_box for all item under this node
-        let total_bbox: BoundingBox = items
+        // as well as the bbox for all items' centroids
+        let (total_bbox, centroid_bbox) = items
             .iter()
-            .filter_map(|info| info.bbox)
-            .reduce(|acc, item| acc.union(&item))
-            .unwrap();
+            // For each item, take the bbox and centroid Options -> (bbox, centroid) tuples
+            .filter_map(|item| match (item.bbox, item.centroid) {
+                (Some(bbox), Some(centroid)) => Some((bbox, centroid)),
+                _ => None,
+            })
+            // reduce the tuples into two bboxes
+            .fold(
+                (BoundingBox::default(), BoundingBox::default()),
+                // Destructs the tuples for init and current for readability
+                |(total_bbox, centroid_bbox), (bbox, centroid)| {
+                    (total_bbox.union(&bbox), centroid_bbox.add_point(centroid))
+                },
+            );
 
+        // choose axis based on lengths of the surrounding bbox
         let axis_idx = total_bbox.longest_axis();
+
+        // set up bins
+        const NUM_BINS: usize = 16;
+        let mut bins = [Bin {
+            count: 0,
+            bbox: BoundingBox::default(),
+        }; NUM_BINS];
+
+        // compute bin info
+        items.iter().for_each(|item| {
+            // Compute which bin based on how far the item's centroid
+            // is the start of the centroid bbox
+            let bin_idx =
+                NUM_BINS * centroid_bbox.offset(item.centroid.unwrap())[axis_idx] as usize;
+            let bin = &mut bins[bin_idx];
+            bin.count += 1;
+            bin.bbox = bin.bbox.union(&item.bbox.unwrap());
+        });
+
+        // set up costs
+        let mut costs = [0.0; NUM_BINS - 1];
+
+        // Using two scans of the items, we can compute the SAH cost
+        // SurfArea_Left * Num_Left + SurfArea_Right * Num_Right
+        // by splitting on the addition, such that the left operand of
+        // the addition is computed on the forward scan, and the right
+        // operand using the backward scan.
+
+        let mut left_bin_acc = Bin {
+            count: 0,
+            bbox: BoundingBox::default(),
+        };
+        for bin in 0..(NUM_BINS - 1) {
+            left_bin_acc.bbox = left_bin_acc.bbox.union(&(bins[bin].bbox));
+            left_bin_acc.count += bins[bin].count;
+            costs[bin] += left_bin_acc.count as f32 * left_bin_acc.bbox.surface_area();
+        }
+
+        let mut right_bin_acc = Bin {
+            count: 0,
+            bbox: BoundingBox::default(),
+        };
+        for bin in (0..(NUM_BINS - 1)).rev() {
+            right_bin_acc.bbox = right_bin_acc.bbox.union(&(bins[bin].bbox));
+            right_bin_acc.count += bins[bin].count;
+            costs[bin] += right_bin_acc.count as f32 * right_bin_acc.bbox.surface_area();
+        }
 
         items.sort_by(|a, b| crate::bvh::box_cmp(&a.bbox, &b.bbox, axis_idx));
 
@@ -124,7 +190,12 @@ where
             .into_iter()
             .map(|item| {
                 let bbox = item.bounding_box(time0, time1);
-                ItemInfo { item, bbox }
+                let centroid = bbox.map(|bbox| bbox.centroid());
+                ItemInfo {
+                    item,
+                    bbox,
+                    centroid,
+                }
             })
             .collect();
 
