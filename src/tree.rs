@@ -94,6 +94,13 @@ where
             return self.new_leaf(items[0].clone());
         }
 
+        if num_items == 2 {
+            let left = Some(self.new_leaf(items[0].clone()));
+            let right = Some(self.new_leaf(items[1].clone()));
+            let bbox = self.compute_bbox(left, right, time0, time1);
+            return self.arena.add(TreeNode::Interior { bbox, left, right });
+        }
+
         // Get bounding_box for all item under this node
         // as well as the bbox for all items' centroids
         let (total_bbox, centroid_bbox) = items
