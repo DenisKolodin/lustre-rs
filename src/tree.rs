@@ -33,6 +33,12 @@ struct Bin {
     bbox: BoundingBox,
 }
 
+impl std::fmt::Display for Bin {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} items in {:?}", self.count, self.bbox)
+    }
+}
+
 impl<T> Tree<T>
 where
     T: Clone + Hittable + Sized,
@@ -123,7 +129,7 @@ where
         let axis_idx = total_bbox.longest_axis();
 
         // set up bins
-        const NUM_BINS: usize = 16;
+        const NUM_BINS: usize = 8;
         let mut bins = [Bin {
             count: 0,
             bbox: BoundingBox::default(),
@@ -139,8 +145,11 @@ where
             bin.count += 1;
             bin.bbox = bin.bbox.union(&item.bbox.unwrap());
         });
-
-        eprintln!("count of items per bin: {:?}", bins.map(|bin| bin.count));
+        
+        eprint!("Bins: ");
+        for bin in bins {
+            eprintln!("\t{bin}")
+        }
 
         // set up costs
         let mut costs = [0.0; NUM_BINS - 1];
@@ -171,6 +180,7 @@ where
             costs[bin - 1] += right_bin_acc.count as f32 * right_bin_acc.bbox.surface_area();
         }
 
+        eprintln!("costs: {costs:?}");
         assert!(!costs.contains(&0.0), "Empty cost! {costs:?}");
 
         // Find smallest split cost and its index into the bins array
@@ -212,6 +222,9 @@ where
 
             (left_items, right_items)
         };
+
+        let szs = (left_items.len(), right_items.len());
+        eprintln!("resulted in (left, right) holding {szs:?}, respectively ");
 
         let left_node = self.new_interior(&mut left_items, time0, time1);
         let right_node = self.new_interior(&mut right_items, time0, time1);
