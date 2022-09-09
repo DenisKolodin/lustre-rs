@@ -1,5 +1,3 @@
-use rand::{prelude::IteratorRandom, Rng};
-
 use crate::{
     bounds::BoundingBox,
     hittables::Hittable,
@@ -81,13 +79,7 @@ where
         }
     }
 
-    fn new_interior(
-        &mut self,
-        items: &mut [ItemInfo<T>],
-        time0: f32,
-        time1: f32,
-        rng: &mut impl Rng,
-    ) -> ArenaIndex {
+    fn new_interior(&mut self, items: &mut [ItemInfo<T>], time0: f32, time1: f32) -> ArenaIndex {
         assert!(!items.is_empty(), "Given empty scene!");
         let num_items = items.len();
 
@@ -107,8 +99,8 @@ where
         items.sort_by(|a, b| crate::bvh::box_cmp(&a.bbox, &b.bbox, axis_idx));
 
         let (left_items, right_items) = items.split_at_mut(num_items / 2);
-        let left_node = self.new_interior(left_items, time0, time1, rng);
-        let right_node = self.new_interior(right_items, time0, time1, rng);
+        let left_node = self.new_interior(left_items, time0, time1);
+        let right_node = self.new_interior(right_items, time0, time1);
 
         let bbox = self.compute_bbox(Some(left_node), Some(right_node), time0, time1);
 
@@ -119,7 +111,7 @@ where
         })
     }
 
-    pub fn with_items(items: Vec<T>, time0: f32, time1: f32, rng: &mut impl Rng) -> Self {
+    pub fn with_items(items: Vec<T>, time0: f32, time1: f32) -> Self {
         // TODO find way to create Tree without making an empty one first
         let mut tree = Self::new();
         // We hope for a best case full binary tree and allocate enough space
@@ -137,7 +129,7 @@ where
             .collect();
 
         // create tree and get root index
-        let root = tree.new_interior(&mut added_info, time0, time1, rng);
+        let root = tree.new_interior(&mut added_info, time0, time1);
 
         // finish modifying the formerly empty tree
         tree.root = Some(root);
