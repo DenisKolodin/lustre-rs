@@ -76,6 +76,17 @@ impl BoundingBox {
         let d = self.diagonal();
         d.x * d.y * d.z
     }
+
+    pub fn longest_axis(&self) -> usize {
+        let d = self.diagonal();
+        if d.x > d.y && d.x > d.z {
+            0
+        } else if d.y > d.z {
+            1
+        } else {
+            2
+        }
+    }
 }
 
 impl Default for BoundingBox {
