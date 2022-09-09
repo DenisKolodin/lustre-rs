@@ -126,9 +126,9 @@ where
         items.iter().for_each(|item| {
             // Compute which bin based on how far the item's centroid
             // is the start of the centroid bbox
-            let bin_idx =
-                NUM_BINS * centroid_bbox.offset(item.centroid.unwrap())[axis_idx] as usize;
-            let bin = &mut bins[bin_idx];
+            let off = centroid_bbox.offset(item.centroid.unwrap())[axis_idx];
+            let bin_idx = NUM_BINS * off as usize;
+            let bin = &mut bins[bin_idx.min(NUM_BINS - 1)];
             bin.count += 1;
             bin.bbox = bin.bbox.union(&item.bbox.unwrap());
         });
