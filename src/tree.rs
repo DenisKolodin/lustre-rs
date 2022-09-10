@@ -96,10 +96,12 @@ where
         assert!(!items.is_empty(), "Given empty scene!");
         let num_items = items.len();
 
+        // given single item, make left
         if num_items == 1 {
             return self.new_leaf(items[0].clone());
         }
 
+        // given two items, just hand craft the interior node
         if num_items == 2 {
             let left = Some(self.new_leaf(items[0].clone()));
             let right = Some(self.new_leaf(items[1].clone()));
@@ -135,54 +137,55 @@ where
             bbox: BoundingBox::default(),
         }; NUM_BINS];
 
+        /// helper functions to correctly compute index into bins
         fn comp_bin_idx(off: f32) -> usize {
             let idx = (NUM_BINS as f32 * off) as usize;
             idx.clamp(0, NUM_BINS - 1)
         }
 
-        // compute bin info
-        items.iter().for_each(|item| {
-            // Compute which bin based on how far the item's centroid
-            // is the start of the centroid bbox
+        // Compute bin based on how far the item's centroid
+        // is from the min of the bbox of centroids
+        for item in items.iter() {
             let off = centroid_bbox.offset(item.centroid.unwrap())[axis_idx];
             let bin_idx = comp_bin_idx(off);
             let bin = &mut bins[bin_idx];
             bin.count += 1;
             bin.bbox = bin.bbox.union(&item.bbox.unwrap());
-        });
+        }
 
         // set up costs
         let mut costs = [0.0; NUM_BINS - 1];
 
         // Using two scans of the items, we can compute the SAH cost
-        // SurfArea_Left * Num_Left + SurfArea_Right * Num_Right
+        // `SurfaceArea_Left * Num_Left + SurfaceArea_Right * Num_Right`
         // by splitting on the addition, such that the left operand of
         // the addition is computed on the forward scan, and the right
-        // operand using the backward scan.
+        // operand using the backward scan. We reuse the [Bin] struct
+        // as it holds exactly the info needed for cost computation
 
-        let mut left_bin_acc = Bin {
+        let mut left_acc = Bin {
             count: 0,
             bbox: BoundingBox::default(),
         };
+
+        // forward scan uses the first bin up to second-to-last bin
         for bin in 0..(NUM_BINS - 1) {
-            left_bin_acc.bbox = left_bin_acc.bbox.union(&(bins[bin].bbox));
-            left_bin_acc.count += bins[bin].count;
-            costs[bin] += left_bin_acc.count as f32 * left_bin_acc.bbox.surface_area();
+            left_acc.bbox = left_acc.bbox.union(&(bins[bin].bbox));
+            left_acc.count += bins[bin].count;
+            costs[bin] += left_acc.count as f32 * left_acc.bbox.surface_area();
         }
 
-        let mut right_bin_acc = Bin {
+        let mut right_acc = Bin {
             count: 0,
             bbox: BoundingBox::default(),
         };
-        for bin in (1..=(NUM_BINS - 1)).rev() {
-            right_bin_acc.bbox = right_bin_acc.bbox.union(&(bins[bin].bbox));
-            right_bin_acc.count += bins[bin].count;
-            costs[bin - 1] += right_bin_acc.count as f32 * right_bin_acc.bbox.surface_area();
-        }
 
-        costs
-            .iter_mut()
-            .for_each(|cost| *cost /= total_bbox.surface_area());
+        // backward scan uses the last bin down to second bin
+        for bin in (1..=(NUM_BINS - 1)).rev() {
+            right_acc.bbox = right_acc.bbox.union(&(bins[bin].bbox));
+            right_acc.count += bins[bin].count;
+            costs[bin - 1] += right_acc.count as f32 * right_acc.bbox.surface_area();
+        }
 
         // Find smallest split cost and its index into the bins array
         let (min_bin_idx, min_cost) = costs
@@ -191,8 +194,11 @@ where
             .min_by(|(_, a_cost), (_, b_cost)| a_cost.total_cmp(b_cost))
             .unwrap();
 
+        // cost to make a node with all items is the # of items
         let leaf_cost = num_items as f32;
-        let min_cost = 0.5 + min_cost/*  / total_bbox.surface_area() */;
+
+        // normalize cost
+        let min_cost = 0.5 + min_cost / total_bbox.surface_area();
 
         // if its better to split, do SAH split
         let (mut left_items, mut right_items) = if min_cost < leaf_cost {
