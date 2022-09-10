@@ -135,13 +135,18 @@ where
             bbox: BoundingBox::default(),
         }; NUM_BINS];
 
+        fn comp_bin_idx(off: f32) -> usize {
+            let idx = (NUM_BINS as f32 * off) as usize;
+            idx.clamp(0, NUM_BINS - 1)
+        }
+
         // compute bin info
         items.iter().for_each(|item| {
             // Compute which bin based on how far the item's centroid
             // is the start of the centroid bbox
             let off = centroid_bbox.offset(item.centroid.unwrap())[axis_idx];
-            let bin_idx = NUM_BINS * off as usize;
-            let bin = &mut bins[bin_idx.min(NUM_BINS - 1)];
+            let bin_idx = comp_bin_idx(off);
+            let bin = &mut bins[bin_idx];
             bin.count += 1;
             bin.bbox = bin.bbox.union(&item.bbox.unwrap());
         });
@@ -200,7 +205,7 @@ where
             eprint!("Creating SAH Split with {num_items:>4} items ");
             let (left_items, right_items): (Vec<_>, Vec<_>) = items.iter().partition(|item| {
                 let off = centroid_bbox.offset(item.centroid.unwrap())[axis_idx];
-                let bin_idx = (NUM_BINS * off as usize).min(NUM_BINS - 1);
+                let bin_idx = comp_bin_idx(off);
                 bin_idx <= min_bin_idx
             });
 
