@@ -11,6 +11,7 @@ pub struct BoundingBox {
     pub max: Vec3A,
 }
 
+#[allow(dead_code)]
 impl BoundingBox {
     /// Creates a new Axis aligned bounding box
     pub fn new(p0: Vec3A, p1: Vec3A) -> Self {
