@@ -102,6 +102,14 @@ impl BoundingBox {
     pub fn centroid(&self) -> Vec3A {
         0.5 * (self.min + self.max)
     }
+
+    pub fn overlaps(&self, other: &Self) -> bool {
+        self.max.cmpge(other.min).all() && self.min.cmple(other.max).all()
+    }
+
+    pub fn inside(&self, point: Vec3A) -> bool {
+        self.max.cmpge(point).all() && self.min.cmple(point).all()
+    }
 }
 
 impl Default for BoundingBox {
