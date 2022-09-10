@@ -11,10 +11,14 @@ pub struct BoundingBox {
     pub max: Vec3A,
 }
 
+#[allow(dead_code)]
 impl BoundingBox {
     /// Creates a new Axis aligned bounding box
-    pub fn new(min: Vec3A, max: Vec3A) -> Self {
-        Self { min, max }
+    pub fn new(p0: Vec3A, p1: Vec3A) -> Self {
+        Self {
+            min: p0.min(p1),
+            max: p0.max(p1),
+        }
     }
 
     /// Returns whether or not the ray hits this bounding box.
@@ -54,17 +58,66 @@ impl BoundingBox {
     /// * the minimums of the two boxes' min members
     /// * the maximums of the two boxes' max members
     pub fn union(&self, other: &BoundingBox) -> BoundingBox {
-        let min = self.min.min(other.min);
-        let max = self.max.max(other.max);
-        Self { min, max }
+        Self {
+            min: self.min.min(other.min),
+            max: self.max.max(other.max),
+        }
+    }
+
+    pub fn add_point(&self, point: Vec3A) -> BoundingBox {
+        Self {
+            min: self.min.min(point),
+            max: self.max.max(point),
+        }
+    }
+
+    pub fn diagonal(&self) -> Vec3A {
+        self.max - self.min
+    }
+
+    pub fn surface_area(&self) -> f32 {
+        let d = self.diagonal();
+        2.0 * (d.x * d.y + d.x * d.z + d.y * d.z)
+    }
+
+    pub fn volume(&self) -> f32 {
+        let d = self.diagonal();
+        d.x * d.y * d.z
+    }
+
+    pub fn longest_axis(&self) -> usize {
+        let d = self.diagonal();
+        if d.x > d.y && d.x > d.z {
+            0
+        } else if d.y > d.z {
+            1
+        } else {
+            2
+        }
+    }
+
+    pub fn offset(&self, point: Vec3A) -> Vec3A {
+        (point - self.min) / self.diagonal()
+    }
+
+    pub fn centroid(&self) -> Vec3A {
+        0.5 * (self.min + self.max)
+    }
+
+    pub fn overlaps(&self, other: &Self) -> bool {
+        self.max.cmpge(other.min).all() && self.min.cmple(other.max).all()
+    }
+
+    pub fn inside(&self, point: Vec3A) -> bool {
+        self.max.cmpge(point).all() && self.min.cmple(point).all()
     }
 }
 
 impl Default for BoundingBox {
     fn default() -> Self {
         Self {
-            min: Vec3A::ZERO,
-            max: Vec3A::ZERO,
+            min: Vec3A::splat(f32::MAX),
+            max: Vec3A::splat(f32::MIN),
         }
     }
 }

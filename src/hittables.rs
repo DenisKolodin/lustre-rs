@@ -83,3 +83,13 @@ pub trait Hittable: Send + Sync {
         Arc::new(self)
     }
 }
+
+impl Hittable for Arc<dyn Hittable> {
+    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+        self.as_ref().hit(ray, t_min, t_max)
+    }
+
+    fn bounding_box(&self, time0: f32, time1: f32) -> Option<BoundingBox> {
+        self.as_ref().bounding_box(time0, time1)
+    }
+}
