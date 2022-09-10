@@ -1,6 +1,16 @@
 pub type ArenaIndex = usize;
 pub use Option as ArenaNode;
 
+/// A simple arena alllocator
+/// 
+/// Such a structure is extremely helpful with graph data structure
+/// implementations in Rust; mananging lifetimes with parent-child node
+/// relationships, possible cycles, etc.. 
+/// 
+/// [generational-arena](https://github.com/fitzgen/generational-arena) is
+/// a strong candidate for "there's something already out there" but
+/// - we don't need to remove items once inserted, a major selling point
+/// - I wanted to write one myself
 #[derive(Debug)]
 pub struct Arena<T> {
     store: Vec<ArenaNode<T>>,
