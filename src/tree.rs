@@ -150,11 +150,6 @@ where
             bin.count += 1;
             bin.bbox = bin.bbox.union(&item.bbox.unwrap());
         });
-        
-        eprint!("Bins: ");
-        for bin in bins {
-            eprintln!("\t{bin}")
-        }
 
         // set up costs
         let mut costs = [0.0; NUM_BINS - 1];
@@ -185,8 +180,9 @@ where
             costs[bin - 1] += right_bin_acc.count as f32 * right_bin_acc.bbox.surface_area();
         }
 
-        eprintln!("costs: {costs:?}");
-        assert!(!costs.contains(&0.0), "Empty cost! {costs:?}");
+        costs
+            .iter_mut()
+            .for_each(|cost| *cost /= total_bbox.surface_area());
 
         // Find smallest split cost and its index into the bins array
         let (min_bin_idx, min_cost) = costs
@@ -196,13 +192,10 @@ where
             .unwrap();
 
         let leaf_cost = num_items as f32;
-        let min_cost = 0.5 + min_cost / total_bbox.surface_area();
-
-        // eprintln!("Cost to create leaf: {leaf_cost:?} vs Min cost: {min_cost:?}");
+        let min_cost = 0.5 + min_cost/*  / total_bbox.surface_area() */;
 
         // if its better to split, do SAH split
         let (mut left_items, mut right_items) = if min_cost < leaf_cost {
-            eprint!("Creating SAH Split with {num_items:>4} items ");
             let (left_items, right_items): (Vec<_>, Vec<_>) = items.iter().partition(|item| {
                 let off = centroid_bbox.offset(item.centroid.unwrap())[axis_idx];
                 let bin_idx = comp_bin_idx(off);
@@ -215,7 +208,6 @@ where
 
             (left_items, right_items)
         } else {
-            eprint!("Creating Mid Split with {num_items:>4} items ");
             items.sort_by(|a, b| crate::bvh::box_cmp(&a.bbox, &b.bbox, axis_idx));
 
             let (left_items, right_items) = items.split_at_mut(num_items / 2);
@@ -227,9 +219,6 @@ where
 
             (left_items, right_items)
         };
-
-        let szs = (left_items.len(), right_items.len());
-        eprintln!("resulted in (left, right) holding {szs:?}, respectively ");
 
         let left_node = self.new_interior(&mut left_items, time0, time1);
         let right_node = self.new_interior(&mut right_items, time0, time1);
