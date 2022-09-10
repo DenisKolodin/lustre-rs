@@ -1,3 +1,5 @@
+//! A SAH-based Bounding Volume Hierarchy
+
 use crate::{
     bounds::BoundingBox,
     hittables::Hittable,
