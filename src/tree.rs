@@ -4,9 +4,12 @@ use crate::{
     utils::arena::{Arena, ArenaIndex},
 };
 
+/// The discrete element making up the [Tree]
 #[derive(Debug)]
 pub enum TreeNode<T> {
+    /// A terminal node containing a single item of type `T`
     Leaf(T),
+    /// A node that holds the indices into its Tree's [Arena]
     Interior {
         bbox: Option<BoundingBox>,
         left: Option<ArenaIndex>,
@@ -14,12 +17,22 @@ pub enum TreeNode<T> {
     },
 }
 
+/// An acceleration structure using arena allocation and the surface area hueristic (SAH) splitting method.
+///
+/// See [Arena] for more information on the allocator.
+///
 #[derive(Debug)]
 pub struct Tree<T> {
     arena: Arena<TreeNode<T>>,
     root: Option<ArenaIndex>,
 }
 
+/// Holds the precomputed information of an item necessary to calculate the SAH
+///
+/// Contains:
+/// - the item itself
+/// - the item's bounding box
+/// - the bounding box's centroid
 #[derive(Debug, Clone)]
 struct ItemInfo<T> {
     item: T,
@@ -27,6 +40,7 @@ struct ItemInfo<T> {
     centroid: Option<glam::Vec3A>,
 }
 
+/// Holds the metadata of items being binned for SAH splitting
 #[derive(Debug, Clone, Copy)]
 struct Bin {
     count: usize,
@@ -43,6 +57,7 @@ impl<T> Tree<T>
 where
     T: Clone + Hittable + Sized,
 {
+    /// Creates an empty tree
     pub fn new() -> Self {
         Self {
             arena: Arena::new(),
@@ -50,10 +65,12 @@ where
         }
     }
 
+    /// Adds a new leaf node to the Tree, returning the index for use in creation and intersection
     fn new_leaf(&mut self, info: ItemInfo<T>) -> ArenaIndex {
         self.arena.add(TreeNode::Leaf(info.item))
     }
 
+    /// Returns the [BoundingBox] of the node at the given index `idx` in timeframe [time0..time1], if it has one
     fn get_bbox(&self, idx: ArenaIndex, time0: f32, time1: f32) -> Option<BoundingBox> {
         match self.arena.get(idx) {
             Some(node) => match node {
@@ -64,6 +81,7 @@ where
         }
     }
 
+    /// Returns the [BoundingBox] surrounding the two child nodes specified by their indices
     fn compute_bbox(
         &self,
         left_idx: Option<usize>,
@@ -92,6 +110,9 @@ where
         }
     }
 
+    /// Creates a new interior node by splitting the given items into child nodes.
+    ///
+    /// TODO more explanation
     fn new_interior(&mut self, items: &mut [ItemInfo<T>], time0: f32, time1: f32) -> ArenaIndex {
         assert!(!items.is_empty(), "Given empty scene!");
         let num_items = items.len();
@@ -238,6 +259,7 @@ where
         })
     }
 
+    /// Creates a new Tree using the given items
     pub fn with_items(items: Vec<T>, time0: f32, time1: f32) -> Self {
         // TODO find way to create Tree without making an empty one first
         let mut tree = Self::new();
@@ -268,6 +290,9 @@ where
         tree
     }
 
+    /// The underlying intersection routine for use in the [Hittable] trait implementation
+    ///
+    /// Since [Hittable::hit] doesn't use tree indices, we have to call this routine instead
     fn hit_impl(
         &self,
         idx: ArenaIndex,
