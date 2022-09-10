@@ -115,8 +115,8 @@ impl BoundingBox {
 impl Default for BoundingBox {
     fn default() -> Self {
         Self {
-            min: Vec3A::ZERO,
-            max: Vec3A::ZERO,
+            min: Vec3A::splat(f32::MAX),
+            max: Vec3A::splat(f32::MIN),
         }
     }
 }
