@@ -2,17 +2,13 @@
 
 use std::path::PathBuf;
 
-use glam::Vec3A;
-
-use crate::color::Color;
-
-use super::Texture;
+use crate::{color::Color, textures::Texture};
 
 /// An image-based texture
 #[derive(Debug)]
 pub struct ImageMap {
     /// The image buffer used as the texture
-    image: Option<image::RgbImage>,
+    image: image::RgbImage,
 }
 
 impl ImageMap {
@@ -40,29 +36,26 @@ impl ImageMap {
         };
 
         Self {
-            image: dyn_img.map(|dyn_img| dyn_img.into_rgb8()).ok(),
+            image: dyn_img
+                .map(|dyn_img| dyn_img.into_rgb8())
+                .expect("We should always have some image data to fall back on"),
         }
     }
 }
 
 impl Texture for ImageMap {
     fn color(&self, u: f32, v: f32, _point: glam::Vec3A) -> Color {
-        match &self.image {
-            None => Color::new(Vec3A::new(0.0, 1.0, 1.0)),
-            Some(img) => {
-                let u = u.clamp(0.0, 1.0);
-                let v = 1.0 - v.clamp(0.0, 1.0);
+        let u = u.clamp(0.0, 1.0);
+        let v = 1.0 - v.clamp(0.0, 1.0);
 
-                let i = u * img.width() as f32;
-                let j = v * img.height() as f32;
+        let i = u * self.image.width() as f32;
+        let j = v * self.image.height() as f32;
 
-                let i = (i as u32).clamp(0, img.width() - 1);
-                let j = (j as u32).clamp(0, img.height() - 1);
+        let i = (i as u32).clamp(0, self.image.width() - 1);
+        let j = (j as u32).clamp(0, self.image.height() - 1);
 
-                // let color_scale = 1.0 / 255.0;
-                let pixel = img[(i, j)];
-                Color::from(pixel)
-            }
-        }
+        // let color_scale = 1.0 / 255.0;
+        let pixel = self.image[(i, j)];
+        Color::from(pixel)
     }
 }
