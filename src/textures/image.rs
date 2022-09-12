@@ -20,19 +20,28 @@ impl ImageMap {
     ///
     /// Loads the image located at `file_path`:
     /// * if successful, holds the decoded [image::RgbImage] in an Option
-    /// * on error, holds `None`
+    /// * on error, holds a default "missing" texture
+    ///
+    /// Missing texture sourced from [The GMod fandom wiki](https://gmod.fandom.com/wiki/Missing_textures),
+    /// available under CC-BY-SA
     pub fn new(file_path: PathBuf) -> Self {
-        let img_result = image::open(file_path);
-
-        let img = match img_result {
-            Ok(dyn_img) => Some(dyn_img.to_rgb8()),
-            Err(e) => {
-                eprintln!("Failed to load image: {}", e);
-                None
+        let dyn_img = match image::io::Reader::open(&file_path) {
+            Ok(file_reader) => file_reader.decode(),
+            Err(_) => {
+                // TODO log file read error
+                // Adapted from [image::io::Reader] usage page
+                image::io::Reader::new(std::io::Cursor::new(include_bytes!(
+                    "../../resources/default.png"
+                )))
+                .with_guessed_format()
+                .expect("We should never fail with binary Cursor reads")
+                .decode()
             }
         };
 
-        Self { image: img }
+        Self {
+            image: dyn_img.map(|dyn_img| dyn_img.into_rgb8()).ok(),
+        }
     }
 }
 
