@@ -1,7 +1,5 @@
 //! An image-backed texture mapping
 
-use std::path::PathBuf;
-
 use crate::{color::Color, textures::Texture};
 
 /// An image-based texture
@@ -20,18 +18,18 @@ impl ImageMap {
     ///
     /// Missing texture sourced from [The GMod fandom wiki](https://gmod.fandom.com/wiki/Missing_textures),
     /// available under CC-BY-SA
-    pub fn new(file_path: PathBuf) -> Self {
-        let dyn_img = match image::io::Reader::open(&file_path) {
+    pub fn new(file_path: std::path::PathBuf) -> Self {
+        use image::io::Reader;
+        let dyn_img = match Reader::open(&file_path) {
             Ok(file_reader) => file_reader.decode(),
             Err(_) => {
                 // TODO log file read error
                 // Adapted from [image::io::Reader] usage page
-                image::io::Reader::new(std::io::Cursor::new(include_bytes!(
-                    "../../resources/default.png"
-                )))
-                .with_guessed_format()
-                .expect("We should never fail with binary Cursor reads")
-                .decode()
+                use std::io::Cursor;
+                Reader::new(Cursor::new(include_bytes!("../../resources/default.png")))
+                    .with_guessed_format()
+                    .expect("We should never fail with binary Cursor reads")
+                    .decode()
             }
         };
 
