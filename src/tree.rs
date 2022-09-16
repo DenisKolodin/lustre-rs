@@ -9,14 +9,26 @@ use crate::{
 /// The discrete element making up the [Tree]
 #[derive(Debug)]
 pub enum TreeNode<T> {
-    /// A terminal node containing a single item of type `T`
-    Leaf(T),
+    /// A terminal node containing `T` values
+    Leaf {
+        items: Vec<T>,
+        bbox: Option<BoundingBox>,
+    },
     /// A node that holds the indices into its Tree's [Arena]
     Interior {
         bbox: Option<BoundingBox>,
         left: Option<ArenaIndex>,
         right: Option<ArenaIndex>,
     },
+}
+
+impl<T> TreeNode<T> {
+    pub fn get_bbox(&self) -> Option<BoundingBox> {
+        match self {
+            TreeNode::Leaf { bbox, .. } => *bbox,
+            TreeNode::Interior { bbox, .. } => *bbox,
+        }
+    }
 }
 
 /// An acceleration structure using arena allocation and the surface area hueristic (SAH) splitting method.
@@ -55,6 +67,15 @@ impl std::fmt::Display for Bin {
     }
 }
 
+fn join_box_options(a: Option<BoundingBox>, b: Option<BoundingBox>) -> Option<BoundingBox> {
+    match (a, b) {
+        (None, None) => None,
+        (None, Some(r_bbox)) => Some(r_bbox),
+        (Some(l_bbox), None) => Some(l_bbox),
+        (Some(l_bbox), Some(r_bbox)) => Some(l_bbox.union(&r_bbox)),
+    }
+}
+
 impl<T> Tree<T>
 where
     T: Clone + Hittable + Sized,
@@ -68,17 +89,20 @@ where
     }
 
     /// Adds a new leaf node to the Tree, returning the index for use in creation and intersection
-    fn new_leaf(&mut self, info: ItemInfo<T>) -> ArenaIndex {
-        self.arena.add(TreeNode::Leaf(info.item))
+    fn new_leaf(&mut self, info: &[ItemInfo<T>]) -> ArenaIndex {
+        self.arena.add(TreeNode::Leaf {
+            items: info.iter().map(|info| info.item.clone()).collect(),
+            bbox: info
+                .iter()
+                .filter_map(|info| info.bbox)
+                .reduce(|acc, b| acc.union(&b)),
+        })
     }
 
     /// Returns the [BoundingBox] of the node at the given index `idx` in timeframe [time0..time1], if it has one
     fn get_bbox(&self, idx: ArenaIndex, time0: f32, time1: f32) -> Option<BoundingBox> {
         match self.arena.get(idx) {
-            Some(node) => match node {
-                TreeNode::Leaf(item) => item.bounding_box(time0, time1),
-                TreeNode::Interior { bbox, .. } => *bbox,
-            },
+            Some(node) => node.get_bbox(),
             None => None,
         }
     }
@@ -98,17 +122,10 @@ where
             (None, Some(r_idx)) => self.get_bbox(r_idx, time0, time1),
             (Some(l_idx), None) => self.get_bbox(l_idx, time0, time1),
             // combine boxes of both children
-            (Some(l_idx), Some(r_idx)) => {
-                match (
-                    self.get_bbox(l_idx, time0, time1),
-                    self.get_bbox(r_idx, time0, time1),
-                ) {
-                    (None, None) => None,
-                    (None, Some(r_bbox)) => Some(r_bbox),
-                    (Some(l_bbox), None) => Some(l_bbox),
-                    (Some(l_bbox), Some(r_bbox)) => Some(l_bbox.union(&r_bbox)),
-                }
-            }
+            (Some(l_idx), Some(r_idx)) => join_box_options(
+                self.get_bbox(l_idx, time0, time1),
+                self.get_bbox(r_idx, time0, time1),
+            ),
         }
     }
 
@@ -119,17 +136,9 @@ where
         assert!(!items.is_empty(), "Given empty scene!");
         let num_items = items.len();
 
-        // given single item, make left
-        if num_items == 1 {
-            return self.new_leaf(items[0].clone());
-        }
-
-        // given two items, just hand craft the interior node
-        if num_items == 2 {
-            let left = Some(self.new_leaf(items[0].clone()));
-            let right = Some(self.new_leaf(items[1].clone()));
-            let bbox = self.compute_bbox(left, right, time0, time1);
-            return self.arena.add(TreeNode::Interior { bbox, left, right });
+        // given few items, make leaf
+        if num_items <= 4 {
+            return self.new_leaf(items);
         }
 
         // Get bounding_box for all item under this node
@@ -154,7 +163,7 @@ where
         let axis_idx = total_bbox.longest_axis();
 
         // set up bins
-        const NUM_BINS: usize = 8;
+        const NUM_BINS: usize = 16;
         let mut bins = [Bin {
             count: 0,
             bbox: BoundingBox::default(),
@@ -223,8 +232,14 @@ where
         // normalize cost
         let min_cost = 0.5 + min_cost / total_bbox.surface_area();
 
+        let perc = ((min_cost - leaf_cost) / leaf_cost) * 100.0;
+        eprintln!(
+            "Leaf cost vs Split Cost: {} vs {} ({})",
+            leaf_cost, min_cost, perc
+        );
+
         // if its better to split, do SAH split
-        let (mut left_items, mut right_items) = if min_cost < leaf_cost {
+        if min_cost < leaf_cost {
             let (left_items, right_items): (Vec<_>, Vec<_>) = items.iter().partition(|item| {
                 let off = centroid_bbox.offset(item.centroid.unwrap())[axis_idx];
                 let bin_idx = comp_bin_idx(off);
@@ -232,33 +247,24 @@ where
             });
 
             // partition returns a vec of refs, go back to cloned values
-            let left_items: Vec<_> = left_items.into_iter().cloned().collect();
-            let right_items: Vec<_> = right_items.into_iter().cloned().collect();
+            let mut left_items: Vec<_> = left_items.into_iter().cloned().collect();
+            let mut right_items: Vec<_> = right_items.into_iter().cloned().collect();
 
-            (left_items, right_items)
+            let left_node = self.new_interior(&mut left_items, time0, time1);
+            let right_node = self.new_interior(&mut right_items, time0, time1);
+
+            let bbox = self.compute_bbox(Some(left_node), Some(right_node), time0, time1);
+
+            self.arena.add(TreeNode::<T>::Interior {
+                bbox,
+                left: Some(left_node),
+                right: Some(right_node),
+            })
         } else {
+            // sort to do later intersection better
             items.sort_by(|a, b| crate::bvh::box_cmp(&a.bbox, &b.bbox, axis_idx));
-
-            let (left_items, right_items) = items.split_at_mut(num_items / 2);
-
-            // if we take the slice ref now, the ref won't live long enough,
-            // so capture values into a Vec then re-slice later :/
-            let left_items: Vec<_> = left_items.to_vec();
-            let right_items: Vec<_> = right_items.to_vec();
-
-            (left_items, right_items)
-        };
-
-        let left_node = self.new_interior(&mut left_items, time0, time1);
-        let right_node = self.new_interior(&mut right_items, time0, time1);
-
-        let bbox = self.compute_bbox(Some(left_node), Some(right_node), time0, time1);
-
-        self.arena.add(TreeNode::<T>::Interior {
-            bbox,
-            left: Some(left_node),
-            right: Some(right_node),
-        })
+            self.new_leaf(items)
+        }
     }
 
     /// Creates a new Tree using the given items
@@ -304,18 +310,31 @@ where
     ) -> Option<crate::hittables::HitRecord> {
         // need a private impl because we need recursion w/ indices
         let node = self.arena.get(idx);
+
+        // if there's a box, check against it first
+        if let Some(node) = node {
+            if let Some(bbox) = node.get_bbox() {
+                if !bbox.hit(ray, t_min, t_max) {
+                    return None;
+                }
+            }
+        }
+
         match node {
             Some(node) => match node {
                 // a leaf node delegates to its contained item
-                TreeNode::Leaf(item) => item.hit(ray, t_min, t_max),
-                TreeNode::Interior { bbox, left, right } => {
-                    // if there's a box, check against it first
-                    if let Some(bbox) = bbox {
-                        if !bbox.hit(ray, t_min, t_max) {
-                            return None;
+                TreeNode::Leaf { items, .. } => {
+                    let mut t_closest = t_max;
+                    items.iter().fold(None, |acc, item| {
+                        if let Some(hit_rec) = item.hit(ray, t_min, t_closest) {
+                            t_closest = hit_rec.t;
+                            Some(hit_rec)
+                        } else {
+                            acc
                         }
-                    }
-
+                    })
+                }
+                TreeNode::Interior { left, right, .. } => {
                     // recurse into children
                     match (left, right) {
                         // no children, no intersection
