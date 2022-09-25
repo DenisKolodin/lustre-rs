@@ -2,9 +2,11 @@
 
 use std::sync::Arc;
 
-use crate::{bounds::BoundingBox, ray::Ray};
-
-use super::{HitRecord, Hittable};
+use crate::{
+    bounds::BoundingBox,
+    hittables::{HitRecord, Hittable},
+    ray::Ray,
+};
 
 /// Type alias for a vector of objects implementing [Hittable]
 pub type HittableList = Vec<Arc<dyn Hittable>>;

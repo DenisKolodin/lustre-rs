@@ -4,9 +4,11 @@ use std::{f32::INFINITY, ops::Neg, sync::Arc};
 
 use rand::Rng;
 
-use crate::{material::Material, textures::Texture};
-
-use super::{HitRecord, Hittable};
+use crate::{
+    hittables::{HitRecord, Hittable},
+    material::Material,
+    textures::Texture,
+};
 
 /// A Volume with a constant density
 pub struct ConstantMedium {

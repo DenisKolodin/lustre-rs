@@ -3,9 +3,11 @@ use std::sync::Arc;
 
 use glam::Vec3A;
 
-use crate::{bounds::BoundingBox, material::Material};
-
-use super::{HitRecord, Hittable, Quad};
+use crate::{
+    bounds::BoundingBox,
+    hittables::{HitRecord, Hittable, Quad},
+    material::Material,
+};
 
 /// A box defined by a set of [Quad] faces
 #[derive(Debug)]
