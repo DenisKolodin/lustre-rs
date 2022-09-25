@@ -17,8 +17,8 @@ pub enum TreeNode<T> {
     /// A node that holds the indices into its Tree's [Arena]
     Interior {
         bbox: Option<BoundingBox>,
-        left: Option<ArenaIndex>,
-        right: Option<ArenaIndex>,
+        left: ArenaIndex,
+        right: ArenaIndex,
     },
 }
 
@@ -100,11 +100,8 @@ where
     }
 
     /// Returns the [BoundingBox] of the node at the given index `idx` in timeframe [time0..time1], if it has one
-    fn get_bbox(&self, idx: ArenaIndex, time0: f32, time1: f32) -> Option<BoundingBox> {
-        match self.arena.get(idx) {
-            Some(node) => node.get_bbox(),
-            None => None,
-        }
+    fn get_bbox(&self, idx: ArenaIndex, time0: f32, time1: f32) -> Option<&BoundingBox> {
+        self.arena[idx].get_bbox()
     }
 
     /// Returns the [BoundingBox] surrounding the two child nodes specified by their indices
@@ -257,8 +254,8 @@ where
 
             self.arena.add(TreeNode::<T>::Interior {
                 bbox,
-                left: Some(left_node),
-                right: Some(right_node),
+                left: left_node,
+                right: right_node,
             })
         } else {
             // sort to do later intersection better
@@ -309,67 +306,51 @@ where
         t_max: f32,
     ) -> Option<crate::hittables::HitRecord> {
         // need a private impl because we need recursion w/ indices
-        let node = self.arena.get(idx);
+        let node = &self.arena[idx];
 
         // if there's a box, check against it first
-        if let Some(node) = node {
-            if let Some(bbox) = node.get_bbox() {
-                if !bbox.hit(ray, t_min, t_max) {
-                    return None;
-                }
+        if let Some(bbox) = node.get_bbox() {
+            if !bbox.hit(ray, t_min, t_max) {
+                return None;
             }
         }
 
         match node {
-            Some(node) => match node {
-                // a leaf node delegates to its contained item
-                TreeNode::Leaf { items, .. } => {
-                    let mut t_closest = t_max;
-                    items.iter().fold(None, |acc, item| {
-                        if let Some(hit_rec) = item.hit(ray, t_min, t_closest) {
-                            t_closest = hit_rec.t;
-                            Some(hit_rec)
+            // a leaf node delegates to its contained item
+            TreeNode::Leaf { items, .. } => {
+                let mut t_closest = t_max;
+                items.iter().fold(None, |acc, item| {
+                    if let Some(hit_rec) = item.hit(ray, t_min, t_closest) {
+                        t_closest = hit_rec.t;
+                        Some(hit_rec)
+                    } else {
+                        acc
+                    }
+                })
+            }
+            TreeNode::Interior { left, right, .. } => {
+                // recurse into children
+                let left_hit = self.hit_impl(*left, ray, t_min, t_max);
+
+                let t_max = match &left_hit {
+                    Some(rec) => rec.t,
+                    None => t_max,
+                };
+
+                let right_hit = self.hit_impl(*right, ray, t_min, t_max);
+                match (left_hit, right_hit) {
+                    (None, None) => None,
+                    (None, Some(r_rec)) => Some(r_rec),
+                    (Some(l_rec), None) => Some(l_rec),
+                    (Some(l_rec), Some(r_rec)) => {
+                        if l_rec.t < r_rec.t {
+                            Some(l_rec)
                         } else {
-                            acc
-                        }
-                    })
-                }
-                TreeNode::Interior { left, right, .. } => {
-                    // recurse into children
-                    match (left, right) {
-                        // no children, no intersection
-                        (None, None) => None,
-                        // one child uses the child's hit result
-                        (None, Some(right)) => self.hit_impl(*right, ray, t_min, t_max),
-                        (Some(left), None) => self.hit_impl(*left, ray, t_min, t_max),
-                        // use the closer of the two children's hit results
-                        (Some(left), Some(right)) => {
-                            let left_hit = self.hit_impl(*left, ray, t_min, t_max);
-
-                            let t_max = match &left_hit {
-                                Some(rec) => rec.t,
-                                None => t_max,
-                            };
-
-                            let right_hit = self.hit_impl(*right, ray, t_min, t_max);
-                            match (left_hit, right_hit) {
-                                (None, None) => None,
-                                (None, Some(r_rec)) => Some(r_rec),
-                                (Some(l_rec), None) => Some(l_rec),
-                                (Some(l_rec), Some(r_rec)) => {
-                                    if l_rec.t < r_rec.t {
-                                        Some(l_rec)
-                                    } else {
-                                        Some(r_rec)
-                                    }
-                                }
-                            }
+                            Some(r_rec)
                         }
                     }
                 }
-            },
-            // no node, no intersection
-            None => None,
+            }
         }
     }
 }
