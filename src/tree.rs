@@ -11,8 +11,8 @@ use crate::{
 pub enum TreeNode<T> {
     /// A terminal node containing `T` values
     Leaf {
-        items: Vec<T>,
         bbox: Option<BoundingBox>,
+        items: Vec<T>,
     },
     /// A node that holds the indices into its Tree's [Arena]
     Interior {
@@ -23,11 +23,12 @@ pub enum TreeNode<T> {
 }
 
 impl<T> TreeNode<T> {
-    pub fn get_bbox(&self) -> Option<BoundingBox> {
+    pub fn get_bbox(&self) -> Option<&BoundingBox> {
         match self {
-            TreeNode::Leaf { bbox, .. } => *bbox,
-            TreeNode::Interior { bbox, .. } => *bbox,
+            TreeNode::Leaf { bbox, .. } => bbox,
+            TreeNode::Interior { bbox, .. } => bbox,
         }
+        .as_ref()
     }
 }
 
@@ -107,8 +108,8 @@ where
     /// Returns the [BoundingBox] surrounding the two child nodes specified by their indices
     fn compute_bbox(
         &self,
-        left_idx: Option<usize>,
-        right_idx: Option<usize>,
+        left_idx: Option<ArenaIndex>,
+        right_idx: Option<ArenaIndex>,
         time0: f32,
         time1: f32,
     ) -> Option<BoundingBox> {
@@ -116,12 +117,18 @@ where
             // no children
             (None, None) => None,
             // use box of only child
-            (None, Some(r_idx)) => self.get_bbox(r_idx, time0, time1),
-            (Some(l_idx), None) => self.get_bbox(l_idx, time0, time1),
+            (None, Some(r_idx)) => self
+                .get_bbox(r_idx, time0, time1)
+                .map(|bbox| bbox.to_owned()),
+            (Some(l_idx), None) => self
+                .get_bbox(l_idx, time0, time1)
+                .map(|bbox| bbox.to_owned()),
             // combine boxes of both children
             (Some(l_idx), Some(r_idx)) => join_box_options(
-                self.get_bbox(l_idx, time0, time1),
-                self.get_bbox(r_idx, time0, time1),
+                self.get_bbox(l_idx, time0, time1)
+                    .map(|bbox| bbox.to_owned()),
+                self.get_bbox(r_idx, time0, time1)
+                    .map(|bbox| bbox.to_owned()),
             ),
         }
     }
@@ -365,16 +372,14 @@ where
         t_min: f32,
         t_max: f32,
     ) -> Option<crate::hittables::HitRecord> {
-        match self.root {
-            Some(root_idx) => self.hit_impl(root_idx, ray, t_min, t_max),
-            None => None,
-        }
+        self.root
+            .and_then(|root_idx| self.hit_impl(root_idx, ray, t_min, t_max))
     }
 
     fn bounding_box(&self, time0: f32, time1: f32) -> Option<BoundingBox> {
-        match self.root {
-            Some(root_idx) => self.get_bbox(root_idx, time0, time1),
-            None => None,
-        }
+        self.root.and_then(|root_idx| {
+            self.get_bbox(root_idx, time0, time1)
+                .map(|bbox| bbox.to_owned())
+        })
     }
 }
