@@ -3,8 +3,7 @@
 use glam::Vec3A;
 use noise::NoiseFn;
 
-use super::Texture;
-use crate::color::Color;
+use crate::{color::Color, textures::Texture};
 
 /// A [noise::NoiseFn]-based texture
 #[derive(Debug)]

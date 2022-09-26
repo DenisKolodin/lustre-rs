@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use glam::{Affine3A, Vec3};
 
-use super::Hittable;
+use crate::hittables::Hittable;
 
 /// A hittable undergoes a transform before and after being hit.
 pub struct Transform {

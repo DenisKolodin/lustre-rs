@@ -2,7 +2,9 @@
 
 [![Rust CI](https://github.com/nbarrios1337/lustre-rs/actions/workflows/rust.yml/badge.svg)](https://github.com/nbarrios1337/lustre-rs/actions/workflows/rust.yml)
 
-Learning Rust via [Peter Shirley's Ray Tracing in One Weekend](https://raytracing.github.io/) Book series and possibly other sources.
+Learning Rust via [Peter Shirley's Ray Tracing in One Weekend](https://raytracing.github.io/) Book series and other sources.
+
+![a modified cover photo scene of Peter Shirley's Ray Tracing in One Weekend book, rendered at 10,000 samples per pixel at about 4k resolution](images/big.png)
 
 ## Usage
 
@@ -44,3 +46,4 @@ Learning Rust via [Peter Shirley's Ray Tracing in One Weekend](https://raytracin
 ## Additional Sources
 
 - [Peter Shirley's "In One Weekend" Blog](https://in1weekend.blogspot.com/), serving as addendums to his aforementioned book series.
+- [Pharr's, Jakob's, and Humphrey's "Physically Based Rendering: From Theory to Implementation"](https://pbr-book.org/): incorporated some of the acceleration structure ideas for the Tree module.

@@ -4,9 +4,7 @@ use std::sync::Arc;
 
 use glam::Vec3A;
 
-use crate::color::Color;
-
-use super::Texture;
+use crate::{color::Color, textures::Texture};
 
 /// A checkered texture alternating between two enclosed textures.
 pub struct Checkered {
