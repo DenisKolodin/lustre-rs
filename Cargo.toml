@@ -14,7 +14,7 @@ readme = "README.md"
 clap = { version = "3.2.22", features = ["derive", "wrap_help"] }
 glam = { version = "0.21.2", features = ["debug-glam-assert", "rand"] }
 image = "0.24.3"
-indicatif = { version = "0.17.0", features = ["rayon"]}
+indicatif = { version = "0.17.1", features = ["rayon"]}
 noise = "0.7.0"
 num-traits = "0.2.15"
 rand = { version = "0.8.5", features = ["small_rng"] }
