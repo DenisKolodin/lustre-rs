@@ -1,5 +1,4 @@
 pub type ArenaIndex = usize;
-pub use Option as ArenaNode;
 
 /// A simple arena alllocator
 ///
@@ -13,7 +12,7 @@ pub use Option as ArenaNode;
 /// - I wanted to write one myself
 #[derive(Debug)]
 pub struct Arena<T> {
-    store: Vec<ArenaNode<T>>,
+    store: Vec<T>,
 }
 
 impl<T> Arena<T> {
@@ -32,22 +31,19 @@ impl<T> Arena<T> {
     /// Adds the item to the arena.
     pub fn add(&mut self, item: T) -> ArenaIndex {
         let index = self.store.len();
-        self.store.push(Some(item));
+        self.store.push(item);
         index
     }
 
-    /// Returns a reference to the [ArenaNode] at the provided index.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the position is out of bounds.
-    pub fn get(&self, index: ArenaIndex) -> &ArenaNode<T> {
-        &self.store[index]
+    /// Returns a reference to the item at the provided index, or `None` if out of bounds.
+    #[allow(unused)]
+    pub fn get(&self, index: ArenaIndex) -> Option<&T> {
+        self.store.get(index)
     }
 }
 
 impl<T> std::ops::Index<ArenaIndex> for Arena<T> {
-    type Output = ArenaNode<T>;
+    type Output = T;
 
     fn index(&self, index: ArenaIndex) -> &Self::Output {
         &self.store[index]

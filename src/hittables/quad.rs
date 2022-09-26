@@ -4,9 +4,11 @@ use std::sync::Arc;
 
 use glam::{Vec2, Vec3A};
 
-use crate::{bounds::BoundingBox, material::Material};
-
-use super::{HitRecord, Hittable};
+use crate::{
+    bounds::BoundingBox,
+    hittables::{HitRecord, Hittable},
+    material::Material,
+};
 
 /// A quadrilateral defined by four points in space
 ///
