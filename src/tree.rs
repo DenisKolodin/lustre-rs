@@ -48,7 +48,7 @@ pub struct Tree<T> {
 /// - the item itself
 /// - the item's bounding box
 /// - the bounding box's centroid
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 struct ItemInfo<T> {
     item: T,
     bbox: Option<BoundingBox>,
@@ -70,7 +70,7 @@ impl std::fmt::Display for Bin {
 
 impl<T> Tree<T>
 where
-    T: Clone + Hittable + Sized,
+    T: Clone + Hittable,
 {
     /// Creates an empty tree
     pub fn new() -> Self {
@@ -308,23 +308,21 @@ where
             // a leaf node delegates to its contained item
             TreeNode::Leaf { items, .. } => {
                 let mut t_closest = t_max;
-                items.iter().fold(None, |acc, item| {
-                    if let Some(hit_rec) = item.hit(ray, t_min, t_closest) {
-                        t_closest = hit_rec.t;
-                        Some(hit_rec)
-                    } else {
-                        acc
-                    }
-                })
+                items
+                    .iter()
+                    .fold(None, |acc, item| match item.hit(ray, t_min, t_closest) {
+                        Some(hit_rec) => {
+                            t_closest = hit_rec.t;
+                            Some(hit_rec)
+                        }
+                        None => acc,
+                    })
             }
             TreeNode::Interior { left, right, .. } => {
                 // recurse into children
                 let left_hit = self.hit_impl(*left, ray, t_min, t_max);
 
-                let t_max = match &left_hit {
-                    Some(rec) => rec.t,
-                    None => t_max,
-                };
+                let t_max = left_hit.as_ref().map_or(t_max, |rec| rec.t);
 
                 let right_hit = self.hit_impl(*right, ray, t_min, t_max);
                 match (left_hit, right_hit) {
