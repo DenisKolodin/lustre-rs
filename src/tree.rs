@@ -23,12 +23,12 @@ pub enum TreeNode<T> {
 }
 
 impl<T> TreeNode<T> {
-    pub fn get_bbox(&self) -> Option<&BoundingBox> {
+    pub fn get_bbox(&self) -> Option<BoundingBox> {
         match self {
             TreeNode::Leaf { bbox, .. } => bbox,
             TreeNode::Interior { bbox, .. } => bbox,
         }
-        .as_ref()
+        .to_owned()
     }
 }
 
@@ -92,7 +92,7 @@ where
     }
 
     /// Returns the [BoundingBox] of the node at the given index `idx` in timeframe [time0..time1], if it has one
-    fn get_bbox(&self, idx: ArenaIndex, time0: f32, time1: f32) -> Option<&BoundingBox> {
+    fn get_bbox(&self, idx: ArenaIndex, time0: f32, time1: f32) -> Option<BoundingBox> {
         self.arena[idx].get_bbox()
     }
 
@@ -359,9 +359,7 @@ where
     }
 
     fn bounding_box(&self, time0: f32, time1: f32) -> Option<BoundingBox> {
-        self.root.and_then(|root_idx| {
-            self.get_bbox(root_idx, time0, time1)
-                .map(|bbox| bbox.to_owned())
-        })
+        self.root
+            .and_then(|root_idx| self.get_bbox(root_idx, time0, time1))
     }
 }
