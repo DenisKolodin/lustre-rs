@@ -226,6 +226,13 @@ where
 
         // if its better to split, do SAH split
         if min_cost < leaf_cost {
+            // init arena space before children
+            let new_idx = self.arena.add(TreeNode::Interior {
+                bbox: None,
+                left: 0,
+                right: 0,
+            });
+
             let (left_items, right_items): (Vec<_>, Vec<_>) = items.iter().partition(|item| {
                 let off = centroid_bbox.offset(item.centroid.unwrap())[axis_idx];
                 let bin_idx = comp_bin_idx(off);
@@ -241,11 +248,12 @@ where
 
             let bbox = self.compute_bbox(left_node, right_node, time0, time1);
 
-            self.arena.add(TreeNode::<T>::Interior {
+            self.arena[new_idx] = TreeNode::<T>::Interior {
                 bbox,
                 left: left_node,
                 right: right_node,
-            })
+            };
+            new_idx
         } else {
             // sort to do later intersection better
             items.sort_by(|a, b| crate::bvh::box_cmp(&a.bbox, &b.bbox, axis_idx));
@@ -278,6 +286,8 @@ where
 
         // create tree and get root index
         let root = tree.new_interior(&mut added_info, time0, time1);
+
+        tree.arena.shrink_to_fit();
 
         // finish modifying the formerly empty tree
         tree.root = Some(root);

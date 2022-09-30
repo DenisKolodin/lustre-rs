@@ -40,6 +40,10 @@ impl<T> Arena<T> {
     pub fn get(&self, index: ArenaIndex) -> Option<&T> {
         self.store.get(index)
     }
+
+    pub fn shrink_to_fit(&mut self) {
+        self.store.shrink_to_fit()
+    }
 }
 
 impl<T> std::ops::Index<ArenaIndex> for Arena<T> {
@@ -47,5 +51,11 @@ impl<T> std::ops::Index<ArenaIndex> for Arena<T> {
 
     fn index(&self, index: ArenaIndex) -> &Self::Output {
         &self.store[index]
+    }
+}
+
+impl<T> std::ops::IndexMut<ArenaIndex> for Arena<T> {
+    fn index_mut(&mut self, index: ArenaIndex) -> &mut Self::Output {
+        &mut self.store[index]
     }
 }
