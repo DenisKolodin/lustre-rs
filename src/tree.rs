@@ -68,15 +68,6 @@ impl std::fmt::Display for Bin {
     }
 }
 
-fn join_box_options(a: Option<BoundingBox>, b: Option<BoundingBox>) -> Option<BoundingBox> {
-    match (a, b) {
-        (None, None) => None,
-        (None, Some(r_bbox)) => Some(r_bbox),
-        (Some(l_bbox), None) => Some(l_bbox),
-        (Some(l_bbox), Some(r_bbox)) => Some(l_bbox.union(&r_bbox)),
-    }
-}
-
 impl<T> Tree<T>
 where
     T: Clone + Hittable + Sized,
@@ -108,28 +99,19 @@ where
     /// Returns the [BoundingBox] surrounding the two child nodes specified by their indices
     fn compute_bbox(
         &self,
-        left_idx: Option<ArenaIndex>,
-        right_idx: Option<ArenaIndex>,
+        left_idx: ArenaIndex,
+        right_idx: ArenaIndex,
         time0: f32,
         time1: f32,
     ) -> Option<BoundingBox> {
-        match (left_idx, right_idx) {
-            // no children
+        match (
+            self.get_bbox(left_idx, time0, time1),
+            self.get_bbox(right_idx, time0, time1),
+        ) {
             (None, None) => None,
-            // use box of only child
-            (None, Some(r_idx)) => self
-                .get_bbox(r_idx, time0, time1)
-                .map(|bbox| bbox.to_owned()),
-            (Some(l_idx), None) => self
-                .get_bbox(l_idx, time0, time1)
-                .map(|bbox| bbox.to_owned()),
-            // combine boxes of both children
-            (Some(l_idx), Some(r_idx)) => join_box_options(
-                self.get_bbox(l_idx, time0, time1)
-                    .map(|bbox| bbox.to_owned()),
-                self.get_bbox(r_idx, time0, time1)
-                    .map(|bbox| bbox.to_owned()),
-            ),
+            (None, Some(r_bbox)) => Some(r_bbox),
+            (Some(l_bbox), None) => Some(l_bbox),
+            (Some(l_bbox), Some(r_bbox)) => Some(l_bbox.union(&r_bbox)),
         }
     }
 
@@ -257,7 +239,7 @@ where
             let left_node = self.new_interior(&mut left_items, time0, time1);
             let right_node = self.new_interior(&mut right_items, time0, time1);
 
-            let bbox = self.compute_bbox(Some(left_node), Some(right_node), time0, time1);
+            let bbox = self.compute_bbox(left_node, right_node, time0, time1);
 
             self.arena.add(TreeNode::<T>::Interior {
                 bbox,
