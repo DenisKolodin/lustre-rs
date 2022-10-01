@@ -249,8 +249,6 @@ where
             };
             new_idx
         } else {
-            // sort to do later intersection better
-            items.sort_by(|a, b| crate::bvh::box_cmp(&a.bbox, &b.bbox, axis_idx));
             self.new_leaf(items)
         }
     }
