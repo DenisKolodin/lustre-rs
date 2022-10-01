@@ -56,7 +56,7 @@ struct ItemInfo<T> {
 }
 
 /// Holds the metadata of items being binned for SAH splitting
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy)]
 struct Bin {
     count: usize,
     bbox: BoundingBox,
@@ -181,10 +181,7 @@ where
         // operand using the backward scan. We reuse the [Bin] struct
         // as it holds exactly the info needed for cost computation
 
-        let mut left_acc = Bin {
-            count: 0,
-            bbox: BoundingBox::default(),
-        };
+        let mut left_acc = Bin::default();
 
         // forward scan uses the first bin up to second-to-last bin
         for bin in 0..(NUM_BINS - 1) {
@@ -193,10 +190,7 @@ where
             costs[bin] += left_acc.count as f32 * left_acc.bbox.surface_area();
         }
 
-        let mut right_acc = Bin {
-            count: 0,
-            bbox: BoundingBox::default(),
-        };
+        let mut right_acc = Bin::default();
 
         // backward scan uses the last bin down to second bin
         for bin in (1..=(NUM_BINS - 1)).rev() {
