@@ -24,11 +24,10 @@ pub enum TreeNode<T> {
 
 impl<T> TreeNode<T> {
     pub fn get_bbox(&self) -> Option<BoundingBox> {
-        match self {
+        *match self {
             TreeNode::Leaf { bbox, .. } => bbox,
             TreeNode::Interior { bbox, .. } => bbox,
         }
-        .to_owned()
     }
 }
 
