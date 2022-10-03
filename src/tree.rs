@@ -23,6 +23,7 @@ pub enum TreeNode<T> {
 }
 
 impl<T> TreeNode<T> {
+    #[inline]
     pub fn get_bbox(&self) -> Option<BoundingBox> {
         *match self {
             TreeNode::Leaf { bbox, .. } => bbox,
@@ -72,6 +73,7 @@ where
     T: Clone + Hittable,
 {
     /// Creates an empty tree
+    #[inline]
     pub fn new() -> Self {
         Self {
             arena: Arena::new(),
@@ -80,6 +82,7 @@ where
     }
 
     /// Adds a new leaf node to the Tree, returning the index for use in creation and intersection
+    #[inline]
     fn new_leaf(&mut self, info: &[ItemInfo<T>]) -> ArenaIndex {
         self.arena.add(TreeNode::Leaf {
             items: info.iter().map(|info| info.item.clone()).collect(),
@@ -91,11 +94,13 @@ where
     }
 
     /// Returns the [BoundingBox] of the node at the given index `idx` in timeframe [time0..time1], if it has one
+    #[inline]
     fn get_bbox(&self, idx: ArenaIndex, time0: f32, time1: f32) -> Option<BoundingBox> {
         self.arena[idx].get_bbox()
     }
 
     /// Returns the [BoundingBox] surrounding the two child nodes specified by their indices
+    #[inline]
     fn compute_bbox(
         &self,
         left_idx: ArenaIndex,
