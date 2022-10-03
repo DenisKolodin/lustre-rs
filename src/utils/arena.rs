@@ -17,11 +17,13 @@ pub struct Arena<T> {
 
 impl<T> Arena<T> {
     /// Creates a new Arena.
+    #[inline]
     pub fn new() -> Self {
         Self { store: Vec::new() }
     }
 
     /// Creates a new Arena with space for `capacity` amount of elements
+    #[inline]
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
             store: Vec::with_capacity(capacity),
@@ -29,6 +31,7 @@ impl<T> Arena<T> {
     }
 
     /// Adds the item to the arena.
+    #[inline]
     pub fn add(&mut self, item: T) -> ArenaIndex {
         let index = self.store.len();
         self.store.push(item);
@@ -41,6 +44,7 @@ impl<T> Arena<T> {
         self.store.get(index)
     }
 
+    #[inline]
     pub fn shrink_to_fit(&mut self) {
         self.store.shrink_to_fit()
     }
