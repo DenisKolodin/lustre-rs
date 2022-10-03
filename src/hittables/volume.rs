@@ -82,7 +82,7 @@ impl Hittable for ConstantMedium {
 /// A Volume with density as a function of a provided [noise::NoiseFn]
 pub struct NonConstantMedium<N>
 where
-    N: ::noise::NoiseFn<[f64; 3]> + Send + Sync,
+    N: ::noise::NoiseFn<f64, 3> + Send + Sync,
 {
     boundary: Arc<dyn Hittable>,
     material: Arc<Material>,
@@ -90,9 +90,10 @@ where
     scale: f32,
 }
 
+#[allow(dead_code)]
 impl<N> NonConstantMedium<N>
 where
-    N: ::noise::NoiseFn<[f64; 3]> + Send + Sync,
+    N: ::noise::NoiseFn<f64, 3> + Send + Sync,
 {
     pub fn new(
         boundary: &Arc<dyn Hittable>,
@@ -113,7 +114,7 @@ where
 
 impl<N> Hittable for NonConstantMedium<N>
 where
-    N: ::noise::NoiseFn<[f64; 3]> + Send + Sync,
+    N: ::noise::NoiseFn<f64, 3> + Send + Sync,
 {
     fn hit(&self, ray: &crate::ray::Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         let mut min_rec = match self.boundary.hit(ray, -INFINITY, INFINITY) {
