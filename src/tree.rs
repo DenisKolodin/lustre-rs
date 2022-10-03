@@ -314,15 +314,16 @@ where
             // a leaf node delegates to its contained item
             TreeNode::Leaf { items, .. } => {
                 let mut t_closest = t_max;
-                items
-                    .iter()
-                    .fold(None, |acc, item| match item.hit(ray, t_min, t_closest) {
-                        Some(hit_rec) => {
-                            t_closest = hit_rec.t;
-                            Some(hit_rec)
-                        }
-                        None => acc,
-                    })
+                let mut rec = None;
+
+                for item in items {
+                    if let Some(hit_rec) = item.hit(ray, t_min, t_closest) {
+                        t_closest = hit_rec.t;
+                        rec = Some(hit_rec);
+                    }
+                }
+
+                rec
             }
             TreeNode::Interior { left, right, .. } => {
                 // recurse into children
