@@ -133,7 +133,7 @@ pub fn get_scene(
 fn get_mat_dev_scene() -> HittableList {
     //  Create ground sphere
     let ground_material = Arc::new(Material::Lambertian {
-        albedo: Arc::new(Color::new(Vec3A::new(0.8, 0.2, 0.2))),
+        albedo: Arc::new(SolidColor::new(Vec3A::new(0.8, 0.2, 0.2))),
     });
     let ground_sph = Sphere::new(Vec3A::new(0.0, -1000.5, 0.0), 1000.0, &ground_material);
 
@@ -162,7 +162,7 @@ fn get_mat_dev_scene() -> HittableList {
 fn gen_random_scene(rng: &mut impl Rng) -> HittableList {
     //  Create ground sphere
     let ground_material = Arc::new(Material::Lambertian {
-        albedo: Arc::new(Color::new(Vec3A::ONE / 2.0)),
+        albedo: Arc::new(SolidColor::new(Vec3A::ONE / 2.0)),
     });
     let mut world: HittableList =
         vec![Sphere::new(Vec3A::new(0.0, -1000.0, 0.0), 1000.0, &ground_material).wrap()];
@@ -183,7 +183,7 @@ fn gen_random_scene(rng: &mut impl Rng) -> HittableList {
                 let mat = if (0.0..0.8).contains(&decide_mat) {
                     // diffuse
                     let rand_color_v = rng.gen::<Vec3A>() * rng.gen::<Vec3A>();
-                    let albedo = Arc::new(Color::new(rand_color_v));
+                    let albedo = Arc::new(SolidColor::new(rand_color_v));
                     Arc::new(Material::Lambertian { albedo })
                 } else if (0.0..0.95).contains(&decide_mat) {
                     // metal
@@ -216,7 +216,7 @@ fn gen_random_scene(rng: &mut impl Rng) -> HittableList {
     let sphere_1 = Sphere::new(Vec3A::new(0.0, 1.0, 0.0), 1.0, &Arc::new(mat_1));
 
     let mat_2 = Material::Lambertian {
-        albedo: Arc::new(Color::new(Vec3A::new(0.4, 0.2, 0.1))),
+        albedo: Arc::new(SolidColor::new(Vec3A::new(0.4, 0.2, 0.1))),
     };
     let sphere_2 = Sphere::new(Vec3A::new(-4.0, 1.0, 0.0), 1.0, &Arc::new(mat_2));
 
@@ -532,7 +532,7 @@ fn gen_emissive_random(rng: &mut impl Rng) -> HittableList {
 
     //  Create ground sphere
     let ground_material = Arc::new(Material::Lambertian {
-        albedo: Arc::new(Color::new(Vec3A::ONE / 2.0)),
+        albedo: Arc::new(SolidColor::new(Vec3A::ONE / 2.0)),
     });
 
     let ground = Sphere::new(Vec3A::new(0.0, -1000.0, 0.0), 1000.0, &ground_material);
@@ -554,7 +554,7 @@ fn gen_emissive_random(rng: &mut impl Rng) -> HittableList {
                 let mat = if (0.0..0.75).contains(&decide_mat) {
                     // diffuse
                     let rand_color_v = rng.gen::<Vec3A>() * rng.gen::<Vec3A>();
-                    let albedo = Arc::new(Color::new(rand_color_v));
+                    let albedo = Arc::new(SolidColor::new(rand_color_v));
                     Arc::new(Material::Lambertian { albedo })
                 } else if (0.0..0.85).contains(&decide_mat) {
                     // metal
@@ -582,7 +582,7 @@ fn gen_emissive_random(rng: &mut impl Rng) -> HittableList {
     let sphere_1 = Sphere::new(Vec3A::new(0.0, 1.0, 0.0), 1.0, &Arc::new(mat_1));
 
     let mat_2 = Material::Lambertian {
-        albedo: Arc::new(Color::new(Vec3A::new(0.4, 0.2, 0.1))),
+        albedo: Arc::new(SolidColor::new(Vec3A::new(0.4, 0.2, 0.1))),
     };
     let sphere_2 = Sphere::new(Vec3A::new(-4.0, 1.0, 0.0), 1.0, &Arc::new(mat_2));
 
