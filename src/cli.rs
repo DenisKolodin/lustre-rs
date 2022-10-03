@@ -7,7 +7,7 @@ use crate::scenes::SceneType;
 
 /// Argument defintions for [clap::Parser]
 #[derive(Parser, Debug)]
-#[clap(version, about, global_setting(clap::AppSettings::DeriveDisplayOrder))]
+#[clap(version, about)]
 pub struct Arguments {
     /// The path to the file to write the resulting image into
     #[clap(

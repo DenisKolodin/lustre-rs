@@ -11,7 +11,7 @@ use crate::{
 
 /// Possible hard-coded scenes to choose from.
 #[allow(dead_code)]
-#[derive(Debug, Clone, Copy, clap::clap_derive::ArgEnum)]
+#[derive(Debug, Clone, Copy, clap::clap_derive::ValueEnum)]
 pub enum SceneType {
     /// Test scene for materials development
     MaterialDev,
