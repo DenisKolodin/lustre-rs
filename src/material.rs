@@ -111,14 +111,10 @@ impl Material {
 
                 let attenuation = albedo.color(rec.u, rec.v, rec.point).into();
 
-                if scattered.direction.dot(rec.normal) > 0.0 {
-                    Some(ScatterRecord {
-                        ray: scattered,
-                        attenuation,
-                    })
-                } else {
-                    None
-                }
+                (scattered.direction.dot(rec.normal) > 0.0).then_some(ScatterRecord {
+                    ray: scattered,
+                    attenuation,
+                })
             }
             Material::Dielectric { refract_index } => {
                 let attenuation = Vec3A::ONE;

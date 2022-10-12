@@ -63,12 +63,9 @@ impl Renderer {
     ///
     /// A scene consists of a [Camera] and some [Hittable].
     /// This functions outputs its progress to the commandline.
-    pub fn render_scene(&self, scene: (Camera, impl Hittable)) -> image::RgbImage {
+    pub fn render_scene(&self, (cam, world): (Camera, impl Hittable)) -> image::RgbImage {
         let progress_bar = get_progressbar((self.image_height * self.image_width) as u64)
             .with_prefix("Generating pixels");
-
-        // Set up rendering properties
-        let (cam, world) = scene;
 
         // Allocate image buffer
         let mut img_buf: image::RgbImage =

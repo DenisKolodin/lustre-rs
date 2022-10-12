@@ -4,7 +4,10 @@ use std::sync::Arc;
 
 use glam::{Affine3A, Vec3};
 
-use crate::hittables::Hittable;
+use crate::{
+    bounds::BoundingBox,
+    hittables::{HitRecord, Hittable},
+};
 
 /// A hittable undergoes a transform before and after being hit.
 pub struct Transform {
@@ -90,7 +93,7 @@ impl Transform {
 }
 
 impl Hittable for Transform {
-    fn hit(&self, ray: &crate::ray::Ray, t_min: f32, t_max: f32) -> Option<super::HitRecord> {
+    fn hit(&self, ray: &crate::ray::Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         let transformed_ray = crate::ray::Ray::new(
             self.matrix.inverse().transform_point3a(ray.origin),
             self.matrix.inverse().transform_vector3a(ray.direction),
@@ -99,7 +102,7 @@ impl Hittable for Transform {
 
         match self.object.hit(&transformed_ray, t_min, t_max) {
             Some(rec) => {
-                let mut transformed_rec = super::HitRecord {
+                let mut transformed_rec = HitRecord {
                     point: self.matrix.transform_point3a(rec.point),
                     normal: self.matrix.transform_vector3a(rec.normal),
                     ..rec
@@ -111,15 +114,13 @@ impl Hittable for Transform {
         }
     }
 
-    fn bounding_box(&self, time0: f32, time1: f32) -> Option<crate::bounds::BoundingBox> {
-        let original_box = self.object.bounding_box(time0, time1);
-        match original_box {
-            Some(original_box) => {
-                let new_min = self.matrix.transform_point3a(original_box.min);
-                let new_max = self.matrix.transform_point3a(original_box.max);
-                Some(crate::bounds::BoundingBox::new(new_min, new_max))
-            }
-            None => None,
-        }
+    fn bounding_box(&self, time0: f32, time1: f32) -> Option<BoundingBox> {
+        self.object
+            .bounding_box(time0, time1)
+            .map(|BoundingBox { min, max }| {
+                let new_min = self.matrix.transform_point3a(min);
+                let new_max = self.matrix.transform_point3a(max);
+                BoundingBox::new(new_min, new_max)
+            })
     }
 }

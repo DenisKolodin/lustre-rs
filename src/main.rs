@@ -1,6 +1,4 @@
 use rand::SeedableRng;
-use render::Renderer;
-use scenes::get_scene;
 
 use crate::{
     bvh::BvhNode,
@@ -16,7 +14,6 @@ mod hittables;
 mod material;
 mod ray;
 mod render;
-mod scatter;
 mod scenes;
 mod textures;
 mod tree;
@@ -39,10 +36,10 @@ fn main() {
     };
 
     // Get scene
-    let (cam, world, dimensions) = get_scene(img_w, cli_args.scene, &mut rng);
+    let (cam, world, dimensions) = scenes::get_scene(img_w, cli_args.scene, &mut rng);
     let world = BvhNode::new(world, 0.0, 1.0, &mut rng);
 
-    let renderer = Renderer::new(
+    let renderer = render::Renderer::new(
         dimensions.x,
         dimensions.y,
         cli_args.samples_per_pixel,
