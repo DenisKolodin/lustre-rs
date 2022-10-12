@@ -5,7 +5,7 @@ use std::f32::INFINITY;
 use glam::Vec3A;
 use rand::Rng;
 
-use crate::{color::Color, hittables::Hittable};
+use crate::{color::Color, hittables::Hittable, material::ScatterRecord};
 
 /// A 3-dimensional Ray
 ///
@@ -51,39 +51,32 @@ impl Ray {
         }
 
         // Check for a hit against the `hittable` parameter
-        match hittable.hit(self, 0.001, INFINITY) {
-            // successful hit, let's do some light gathering
-            Some(hit_rec) => {
-                // need a ref since scatter takes a ref to rec later
-                let mat = &hit_rec.material;
-                // gather any emitted light contribution
-                let emit_contrib = match mat.emit(hit_rec.u, hit_rec.v, hit_rec.point) {
-                    Some(color) => Vec3A::from(color),
-                    None => Vec3A::ZERO,
-                };
+        if let Some(hit_rec) = hittable.hit(self, 0.001, INFINITY) {
+            // need a ref since scatter takes a ref to rec later
+            let mat = &hit_rec.material;
+            // gather any emitted light contribution
+            let emit_contrib = match mat.emit(hit_rec.u, hit_rec.v, hit_rec.point) {
+                Some(color) => Vec3A::from(color),
+                None => Vec3A::ZERO,
+            };
 
-                // gather any scattered light contribution
-                let scatter_contrib = match mat.scatter(self, &hit_rec, rng) {
-                    // A successful ray scatter leads to more contributions.
-                    Some(sctr_rec) => {
-                        sctr_rec.attenuation
-                            * Vec3A::from(sctr_rec.ray.shade(
-                                hittable,
-                                bounce_depth - 1,
-                                bg_color,
-                                rng,
-                            ))
-                    }
-                    // Otherwise, we're done
-                    None => Vec3A::ZERO,
-                };
+            // gather any scattered light contribution
+            let scatter_contrib = match mat.scatter(self, &hit_rec, rng) {
+                // A successful ray scatter leads to more contributions.
+                Some(ScatterRecord { ray, attenuation }) => {
+                    let bounced = ray.shade(hittable, bounce_depth - 1, bg_color, rng);
+                    attenuation * Vec3A::from(bounced)
+                }
+                // Otherwise, we're done
+                None => Vec3A::ZERO,
+            };
 
-                // both emissives and scattered light contribute, unless they're zeroed
-                // with current materials, one of these will always be zero
-                Color::new(emit_contrib + scatter_contrib)
-            }
+            // both emissives and scattered light contribute, unless they're zeroed
+            // with current materials, one of these will always be zero
+            Color::new(emit_contrib + scatter_contrib)
+        } else {
             // without a hit, functions like a miss shader
-            None => bg_color,
+            bg_color
         }
     }
 }
