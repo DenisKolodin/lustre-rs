@@ -39,7 +39,7 @@ impl<T> TreeNode<T> {
 #[derive(Debug)]
 pub struct Tree<T> {
     arena: Arena<TreeNode<T>>,
-    root: Option<ArenaIndex>,
+    root: ArenaIndex,
 }
 
 /// Holds the precomputed information of an item necessary to calculate the SAH
@@ -72,15 +72,6 @@ impl<T> Tree<T>
 where
     T: Clone + Hittable,
 {
-    /// Creates an empty tree
-    #[inline]
-    pub fn new() -> Self {
-        Self {
-            arena: Arena::new(),
-            root: None,
-        }
-    }
-
     /// Adds a new leaf node to the Tree, returning the index for use in creation and intersection
     #[inline]
     fn new_leaf(&mut self, info: &[ItemInfo<T>]) -> ArenaIndex {
@@ -258,9 +249,12 @@ where
     }
 
     /// Creates a new Tree using the given items
-    pub fn with_items(items: Vec<T>, time0: f32, time1: f32) -> Self {
+    pub fn new(items: Vec<T>, time0: f32, time1: f32) -> Self {
         // TODO find way to create Tree without making an empty one first
-        let mut tree = Self::new();
+        let mut tree = Self {
+            arena: Arena::new(),
+            root: 0,
+        };
         // We hope for a best case full binary tree and allocate enough space
         // for such a case, minimizing allocations per-insertion
         // See [Properties of binary trees from the Binary Tree Wikipedia article](https://en.wikipedia.org/wiki/Binary_tree#Properties_of_binary_trees)
@@ -281,12 +275,8 @@ where
             .collect();
 
         // create tree and get root index
-        let root = tree.new_interior(&mut added_info, time0, time1);
-
+        tree.root = tree.new_interior(&mut added_info, time0, time1);
         tree.arena.shrink_to_fit();
-
-        // finish modifying the formerly empty tree
-        tree.root = Some(root);
         tree
     }
 
@@ -359,12 +349,10 @@ where
         t_min: f32,
         t_max: f32,
     ) -> Option<crate::hittables::HitRecord> {
-        self.root
-            .and_then(|root_idx| self.hit_impl(root_idx, ray, t_min, t_max))
+        self.hit_impl(self.root, ray, t_min, t_max)
     }
 
     fn bounding_box(&self, time0: f32, time1: f32) -> Option<BoundingBox> {
-        self.root
-            .and_then(|root_idx| self.get_bbox(root_idx, time0, time1))
+        self.get_bbox(self.root, time0, time1)
     }
 }
