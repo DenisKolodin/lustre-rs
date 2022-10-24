@@ -50,16 +50,16 @@ pub struct Tree<T> {
 /// - the bounding box's centroid
 #[derive(Debug, Clone, Copy)]
 struct ItemInfo<T> {
-    item: T,
     bbox: Option<BoundingBox>,
     centroid: Option<glam::Vec3A>,
+    item: T,
 }
 
 /// Holds the metadata of items being binned for SAH splitting
 #[derive(Debug, Default, Clone, Copy)]
 struct Bin {
-    count: usize,
     bbox: BoundingBox,
+    count: usize,
 }
 
 impl std::fmt::Display for Bin {
@@ -206,12 +206,6 @@ where
 
         // normalize cost
         let min_cost = 0.5 + min_cost / total_bbox.surface_area();
-
-        let perc = ((min_cost - leaf_cost) / leaf_cost) * 100.0;
-        eprintln!(
-            "Leaf cost vs Split Cost: {} vs {} ({})",
-            leaf_cost, min_cost, perc
-        );
 
         // if its better to split, do SAH split
         if min_cost < leaf_cost {
