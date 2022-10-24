@@ -85,7 +85,7 @@ impl BvhNode {
             }
             (None, Some(b)) => b,
             (Some(a), None) => a,
-            (Some(a), Some(b)) => a.union(&b),
+            (Some(a), Some(b)) => a.union(b),
         };
 
         Self { left, right, bbox }

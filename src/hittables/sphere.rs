@@ -201,6 +201,6 @@ impl Hittable for MovingSphere {
             self.center(time1) + Vec3A::splat(self.radius),
         );
 
-        Some(box0.union(&box1))
+        Some(box0.union(box1))
     }
 }

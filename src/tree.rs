@@ -80,7 +80,7 @@ where
             bbox: info
                 .iter()
                 .filter_map(|info| info.bbox)
-                .reduce(|acc, b| acc.union(&b)),
+                .reduce(|acc, b| acc.union(b)),
         })
     }
 
@@ -106,7 +106,7 @@ where
             (None, None) => None,
             (None, Some(r_bbox)) => Some(r_bbox),
             (Some(l_bbox), None) => Some(l_bbox),
-            (Some(l_bbox), Some(r_bbox)) => Some(l_bbox.union(&r_bbox)),
+            (Some(l_bbox), Some(r_bbox)) => Some(l_bbox.union(r_bbox)),
         }
     }
 
@@ -136,7 +136,7 @@ where
                 (BoundingBox::default(), BoundingBox::default()),
                 // Destructs the tuples for init and current for readability
                 |(total_bbox, centroid_bbox), (bbox, centroid)| {
-                    (total_bbox.union(&bbox), centroid_bbox.add_point(centroid))
+                    (total_bbox.union(bbox), centroid_bbox.add_point(centroid))
                 },
             );
 
@@ -163,7 +163,7 @@ where
             let bin_idx = comp_bin_idx(off);
             let bin = &mut bins[bin_idx];
             bin.count += 1;
-            bin.bbox = bin.bbox.union(&item.bbox.unwrap());
+            bin.bbox = bin.bbox.union(item.bbox.unwrap());
         }
 
         // set up costs
@@ -180,7 +180,7 @@ where
 
         // forward scan uses the first bin up to second-to-last bin
         for bin in 0..(NUM_BINS - 1) {
-            left_acc.bbox = left_acc.bbox.union(&(bins[bin].bbox));
+            left_acc.bbox = left_acc.bbox.union(bins[bin].bbox);
             left_acc.count += bins[bin].count;
             costs[bin] += left_acc.count as f32 * left_acc.bbox.surface_area();
         }
@@ -189,7 +189,7 @@ where
 
         // backward scan uses the last bin down to second bin
         for bin in (1..=(NUM_BINS - 1)).rev() {
-            right_acc.bbox = right_acc.bbox.union(&(bins[bin].bbox));
+            right_acc.bbox = right_acc.bbox.union(bins[bin].bbox);
             right_acc.count += bins[bin].count;
             costs[bin - 1] += right_acc.count as f32 * right_acc.bbox.surface_area();
         }

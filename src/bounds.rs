@@ -57,7 +57,7 @@ impl BoundingBox {
     /// In other words, combines the two boxes by taking:
     /// * the minimums of the two boxes' min members
     /// * the maximums of the two boxes' max members
-    pub fn union(&self, other: &BoundingBox) -> BoundingBox {
+    pub fn union(&self, other: BoundingBox) -> BoundingBox {
         Self {
             min: self.min.min(other.min),
             max: self.max.max(other.max),

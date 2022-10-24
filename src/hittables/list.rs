@@ -37,6 +37,6 @@ impl Hittable for HittableList {
         // repeated applications of the union fn.
         self.iter()
             .filter_map(|hittable| hittable.bounding_box(time0, time1))
-            .reduce(|acc, bbox| acc.union(&bbox))
+            .reduce(|acc, bbox| acc.union(bbox))
     }
 }
