@@ -84,25 +84,16 @@ where
         })
     }
 
-    /// Returns the [BoundingBox] of the node at the given index `idx` in timeframe [time0..time1], if it has one
+    /// Returns the [BoundingBox] of the node at the given index `idx`, if it has one
     #[inline]
-    fn get_bbox(&self, idx: ArenaIndex, time0: f32, time1: f32) -> Option<BoundingBox> {
+    fn get_bbox(&self, idx: ArenaIndex) -> Option<BoundingBox> {
         self.arena[idx].get_bbox()
     }
 
     /// Returns the [BoundingBox] surrounding the two child nodes specified by their indices
     #[inline]
-    fn compute_bbox(
-        &self,
-        left_idx: ArenaIndex,
-        right_idx: ArenaIndex,
-        time0: f32,
-        time1: f32,
-    ) -> Option<BoundingBox> {
-        match (
-            self.get_bbox(left_idx, time0, time1),
-            self.get_bbox(right_idx, time0, time1),
-        ) {
+    fn compute_bbox(&self, left_idx: ArenaIndex, right_idx: ArenaIndex) -> Option<BoundingBox> {
+        match (self.get_bbox(left_idx), self.get_bbox(right_idx)) {
             (None, None) => None,
             (None, Some(r_bbox)) => Some(r_bbox),
             (Some(l_bbox), None) => Some(l_bbox),
@@ -113,7 +104,7 @@ where
     /// Creates a new interior node by splitting the given items into child nodes.
     ///
     /// TODO more explanation
-    fn new_interior(&mut self, items: &mut [ItemInfo<T>], time0: f32, time1: f32) -> ArenaIndex {
+    fn new_interior(&mut self, items: &mut [ItemInfo<T>]) -> ArenaIndex {
         assert!(!items.is_empty(), "Given empty scene!");
         let num_items = items.len();
 
@@ -226,10 +217,10 @@ where
             let mut left_items: Vec<_> = left_items.into_iter().cloned().collect();
             let mut right_items: Vec<_> = right_items.into_iter().cloned().collect();
 
-            let left_node = self.new_interior(&mut left_items, time0, time1);
-            let right_node = self.new_interior(&mut right_items, time0, time1);
+            let left_node = self.new_interior(&mut left_items);
+            let right_node = self.new_interior(&mut right_items);
 
-            let bbox = self.compute_bbox(left_node, right_node, time0, time1);
+            let bbox = self.compute_bbox(left_node, right_node);
 
             self.arena[new_idx] = TreeNode::<T>::Interior {
                 bbox,
@@ -269,7 +260,7 @@ where
             .collect();
 
         // create tree and get root index
-        tree.root = tree.new_interior(&mut added_info, time0, time1);
+        tree.root = tree.new_interior(&mut added_info);
         tree.arena.shrink_to_fit();
         tree
     }
@@ -346,7 +337,7 @@ where
         self.hit_impl(self.root, ray, t_min, t_max)
     }
 
-    fn bounding_box(&self, time0: f32, time1: f32) -> Option<BoundingBox> {
-        self.get_bbox(self.root, time0, time1)
+    fn bounding_box(&self, _time0: f32, _time1: f32) -> Option<BoundingBox> {
+        self.get_bbox(self.root)
     }
 }
