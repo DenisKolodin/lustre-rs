@@ -74,7 +74,7 @@ where
 {
     /// Adds a new leaf node to the Tree, returning the index for use in creation and intersection
     #[inline]
-    fn new_leaf(&mut self, info: &[ItemInfo<T>]) -> ArenaIndex {
+    fn new_leaf(&mut self, info: Vec<ItemInfo<T>>) -> ArenaIndex {
         self.arena.add(TreeNode::Leaf {
             items: info.iter().map(|info| info.item.clone()).collect(),
             bbox: info
@@ -90,22 +90,10 @@ where
         self.arena[idx].get_bbox()
     }
 
-    /// Returns the [BoundingBox] surrounding the two child nodes specified by their indices
-    #[inline]
-    fn compute_bbox(&self, left_idx: ArenaIndex, right_idx: ArenaIndex) -> Option<BoundingBox> {
-        match (self.get_bbox(left_idx), self.get_bbox(right_idx)) {
-            (None, None) => None,
-            (None, Some(r_bbox)) => Some(r_bbox),
-            (Some(l_bbox), None) => Some(l_bbox),
-            (Some(l_bbox), Some(r_bbox)) => Some(l_bbox.union(r_bbox)),
-        }
-    }
-
     /// Creates a new interior node by splitting the given items into child nodes.
     ///
     /// TODO more explanation
-    fn new_interior(&mut self, items: &mut [ItemInfo<T>]) -> ArenaIndex {
-        assert!(!items.is_empty(), "Given empty scene!");
+    fn new_interior(&mut self, mut items: Vec<ItemInfo<T>>) -> ArenaIndex {
         let num_items = items.len();
 
         // given few items, make leaf
@@ -114,92 +102,91 @@ where
         }
 
         // Get bounding_box for all item under this node
-        // as well as the bbox for all items' centroids
-        let (total_bbox, centroid_bbox) = items
+        let total_bbox = items
             .iter()
-            // For each item, take the bbox and centroid Options -> (bbox, centroid) tuples
-            .filter_map(|item| match (item.bbox, item.centroid) {
-                (Some(bbox), Some(centroid)) => Some((bbox, centroid)),
-                _ => None,
-            })
-            // reduce the tuples into two bboxes
-            .fold(
-                (BoundingBox::default(), BoundingBox::default()),
-                // Destructs the tuples for init and current for readability
-                |(total_bbox, centroid_bbox), (bbox, centroid)| {
-                    (total_bbox.union(bbox), centroid_bbox.add_point(centroid))
-                },
-            );
+            .filter_map(|item| item.bbox)
+            .reduce(|acc, b| acc.union(b));
 
-        // choose axis based on lengths of the surrounding bbox
-        let axis_idx = total_bbox.longest_axis();
+        if let Some(total_bbox) = total_bbox {
+            // If we have some bounding box, then we have some centroids
+            let centroid_bbox = items
+                .iter()
+                .filter_map(|item| item.centroid)
+                .fold(BoundingBox::default(), |bbox, centroid| {
+                    bbox.add_point(centroid)
+                });
 
-        // set up bins
-        const NUM_BINS: usize = 16;
-        let mut bins = [Bin {
-            count: 0,
-            bbox: BoundingBox::default(),
-        }; NUM_BINS];
+            // choose axis based on lengths of the surrounding bbox
+            let axis_idx = total_bbox.longest_axis();
 
-        /// helper functions to correctly compute index into bins
-        fn comp_bin_idx(off: f32) -> usize {
-            let idx = (NUM_BINS as f32 * off) as usize;
-            idx.clamp(0, NUM_BINS - 1)
-        }
+            // set up bins
+            const NUM_BINS: usize = 16;
+            let mut bins = [Bin {
+                count: 0,
+                bbox: BoundingBox::default(),
+            }; NUM_BINS];
 
-        // Compute bin based on how far the item's centroid
-        // is from the min of the bbox of centroids
-        for item in items.iter() {
-            let off = centroid_bbox.offset(item.centroid.unwrap())[axis_idx];
-            let bin_idx = comp_bin_idx(off);
-            let bin = &mut bins[bin_idx];
-            bin.count += 1;
-            bin.bbox = bin.bbox.union(item.bbox.unwrap());
-        }
+            /// helper functions to correctly compute index into bins
+            fn comp_bin_idx(off: f32) -> usize {
+                let idx = (NUM_BINS as f32 * off) as usize;
+                idx.clamp(0, NUM_BINS - 1)
+            }
 
-        // set up costs
-        let mut costs = [0.0; NUM_BINS - 1];
+            // Compute bin based on how far the item's centroid
+            // is from the min of the bbox of centroids
+            for item in items.iter() {
+                let off = match item.centroid {
+                    Some(centroid) => centroid_bbox.offset(centroid)[axis_idx],
+                    None => (NUM_BINS / 2) as f32,
+                };
 
-        // Using two scans of the items, we can compute the SAH cost
-        // `SurfaceArea_Left * Num_Left + SurfaceArea_Right * Num_Right`
-        // by splitting on the addition, such that the left operand of
-        // the addition is computed on the forward scan, and the right
-        // operand using the backward scan. We reuse the [Bin] struct
-        // as it holds exactly the info needed for cost computation
+                let bin_idx = comp_bin_idx(off);
+                let bin = &mut bins[bin_idx];
+                bin.count += 1;
+                bin.bbox = bin.bbox.union(item.bbox.unwrap_or_default());
+            }
 
-        let mut left_acc = Bin::default();
+            // set up costs
+            let mut costs = [0.0; NUM_BINS - 1];
 
-        // forward scan uses the first bin up to second-to-last bin
-        for bin in 0..(NUM_BINS - 1) {
-            left_acc.bbox = left_acc.bbox.union(bins[bin].bbox);
-            left_acc.count += bins[bin].count;
-            costs[bin] += left_acc.count as f32 * left_acc.bbox.surface_area();
-        }
+            // Using two scans of the items, we can compute the SAH cost
+            // `SurfaceArea_Left * Num_Left + SurfaceArea_Right * Num_Right`
+            // by splitting on the addition, such that the left operand of
+            // the addition is computed on the forward scan, and the right
+            // operand using the backward scan. We reuse the [Bin] struct
+            // as it holds exactly the info needed for cost computation
 
-        let mut right_acc = Bin::default();
+            let mut left_acc = Bin::default();
 
-        // backward scan uses the last bin down to second bin
-        for bin in (1..=(NUM_BINS - 1)).rev() {
-            right_acc.bbox = right_acc.bbox.union(bins[bin].bbox);
-            right_acc.count += bins[bin].count;
-            costs[bin - 1] += right_acc.count as f32 * right_acc.bbox.surface_area();
-        }
+            // forward scan uses the first bin up to second-to-last bin
+            for bin in 0..(NUM_BINS - 1) {
+                left_acc.bbox = left_acc.bbox.union(bins[bin].bbox);
+                left_acc.count += bins[bin].count;
+                costs[bin] += left_acc.count as f32 * left_acc.bbox.surface_area();
+            }
 
-        // Find smallest split cost and its index into the bins array
-        let (min_bin_idx, min_cost) = costs
-            .iter()
-            .enumerate()
-            .min_by(|(_, a_cost), (_, b_cost)| a_cost.total_cmp(b_cost))
-            .unwrap();
+            let mut right_acc = Bin::default();
 
-        // cost to make a node with all items is the # of items
-        let leaf_cost = num_items as f32;
+            // backward scan uses the last bin down to second bin
+            for bin in (1..=(NUM_BINS - 1)).rev() {
+                right_acc.bbox = right_acc.bbox.union(bins[bin].bbox);
+                right_acc.count += bins[bin].count;
+                costs[bin - 1] += right_acc.count as f32 * right_acc.bbox.surface_area();
+            }
 
-        // normalize cost
-        let min_cost = 0.5 + min_cost / total_bbox.surface_area();
+            // Find smallest split cost and its index into the bins array
+            let (min_bin_idx, min_cost) = costs
+                .iter()
+                .enumerate()
+                .min_by(|(_, a_cost), (_, b_cost)| a_cost.total_cmp(b_cost))
+                .unwrap();
 
-        // if its better to split, do SAH split
-        if min_cost < leaf_cost {
+            // cost to make a node with all items is the # of items
+            let leaf_cost = num_items as f32;
+
+            // normalize cost
+            let min_cost = 0.5 + min_cost / total_bbox.surface_area();
+
             // init arena space before children
             let new_idx = self.arena.add(TreeNode::Interior {
                 bbox: None,
@@ -207,34 +194,51 @@ where
                 right: 0,
             });
 
-            let (left_items, right_items): (Vec<_>, Vec<_>) = items.iter().partition(|item| {
-                let off = centroid_bbox.offset(item.centroid.unwrap())[axis_idx];
-                let bin_idx = comp_bin_idx(off);
-                bin_idx <= min_bin_idx
-            });
+            // if its better to split, do SAH split
+            let (left_items, right_items) = if min_cost < leaf_cost {
+                items.into_iter().partition(|item| match item.centroid {
+                    Some(centroid) => {
+                        let off = centroid_bbox.offset(centroid)[axis_idx];
+                        let bin_idx = comp_bin_idx(off);
+                        bin_idx <= min_bin_idx
+                    }
+                    None => true,
+                })
+            } else {
+                // otherwise split items based on total_bbox cmp
+                items.sort_by(|a, b| match (a.bbox, b.bbox) {
+                    (None, None) => unreachable!(),
+                    (None, Some(_)) => std::cmp::Ordering::Less,
+                    (Some(_), None) => std::cmp::Ordering::Greater,
+                    (Some(a), Some(b)) => a.min[axis_idx].total_cmp(&(b.min[axis_idx])),
+                });
 
-            // partition returns a vec of refs, go back to cloned values
-            let mut left_items: Vec<_> = left_items.into_iter().cloned().collect();
-            let mut right_items: Vec<_> = right_items.into_iter().cloned().collect();
+                let total_midpoint = total_bbox.min.lerp(total_bbox.max, 0.5)[axis_idx];
 
-            let left_node = self.new_interior(&mut left_items);
-            let right_node = self.new_interior(&mut right_items);
+                items.into_iter().partition(|item| match item.bbox {
+                    Some(bbox) => bbox.min[axis_idx] < total_midpoint,
+                    None => true,
+                })
+            };
 
-            let bbox = self.compute_bbox(left_node, right_node);
+            let left_idx = self.new_interior(left_items);
+            let right_idx = self.new_interior(right_items);
 
             self.arena[new_idx] = TreeNode::<T>::Interior {
-                bbox,
-                left: left_node,
-                right: right_node,
+                bbox: Some(total_bbox),
+                left: left_idx,
+                right: right_idx,
             };
             new_idx
         } else {
+            // full of unbounded objects, make leaf
             self.new_leaf(items)
         }
     }
 
     /// Creates a new Tree using the given items
     pub fn new(items: Vec<T>, time0: f32, time1: f32) -> Self {
+        debug_assert!(!items.is_empty(), "Given empty scene!");
         // TODO find way to create Tree without making an empty one first
         let mut tree = Self {
             arena: Arena::new(),
@@ -246,7 +250,7 @@ where
         tree.arena = Arena::with_capacity((items.len() * 2) - 1);
 
         // Compute info per item
-        let mut added_info: Vec<ItemInfo<T>> = items
+        let added_info: Vec<ItemInfo<T>> = items
             .into_iter()
             .map(|item| {
                 let bbox = item.bounding_box(time0, time1);
@@ -260,7 +264,7 @@ where
             .collect();
 
         // create tree and get root index
-        tree.root = tree.new_interior(&mut added_info);
+        tree.root = tree.new_interior(added_info);
         tree.arena.shrink_to_fit();
         tree
     }
@@ -306,18 +310,9 @@ where
 
                 let t_max = left_hit.as_ref().map_or(t_max, |rec| rec.t);
 
-                let right_hit = self.hit_impl(*right, ray, t_min, t_max);
-                match (left_hit, right_hit) {
-                    (None, None) => None,
-                    (None, Some(r_rec)) => Some(r_rec),
-                    (Some(l_rec), None) => Some(l_rec),
-                    (Some(l_rec), Some(r_rec)) => {
-                        if l_rec.t < r_rec.t {
-                            Some(l_rec)
-                        } else {
-                            Some(r_rec)
-                        }
-                    }
+                match self.hit_impl(*right, ray, t_min, t_max) {
+                    Some(right_hit) => Some(right_hit),
+                    None => left_hit,
                 }
             }
         }
