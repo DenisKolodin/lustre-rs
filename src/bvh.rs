@@ -8,6 +8,7 @@ use crate::{
     bounds::BoundingBox,
     hittables::{HitRecord, Hittable, HittableList},
     ray::Ray,
+    utils::match_opts::match_opts,
 };
 
 /// A node in the BVH.
@@ -109,18 +110,7 @@ impl Hittable for BvhNode {
             };
 
             let right_hit = self.right.hit(ray, t_min, t_max);
-            match (left_hit, right_hit) {
-                (None, None) => None,
-                (None, Some(r_rec)) => Some(r_rec),
-                (Some(l_rec), None) => Some(l_rec),
-                (Some(l_rec), Some(r_rec)) => {
-                    if l_rec.t < r_rec.t {
-                        Some(l_rec)
-                    } else {
-                        Some(r_rec)
-                    }
-                }
-            }
+            match_opts(left_hit, right_hit, |a, b| if a.t < b.t { a } else { b })
         } else {
             None
         }
