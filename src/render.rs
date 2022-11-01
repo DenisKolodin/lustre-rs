@@ -81,7 +81,7 @@ impl Renderer {
                 let (x, y, pixel) = indexed_pixel;
 
                 // map reduce N samples into single Vec3A
-                let mut color_v = (0..self.samples_per_pixel)
+                let mut color_v: Vec3A = (0..self.samples_per_pixel)
                     .into_par_iter()
                     .map_init(
                         || SmallRng::from_rng(rand::thread_rng()),
@@ -92,7 +92,7 @@ impl Renderer {
                             self.compute_pixel_v(&cam, &world, x, y, rng)
                         },
                     )
-                    .reduce(|| Vec3A::ZERO, |a, b| a + b);
+                    .sum();
 
                 // Account for number of samples
                 color_v /= self.samples_per_pixel as f32;

@@ -107,9 +107,9 @@ impl Camera {
 impl Default for Camera {
     fn default() -> Self {
         Self::new(
-            Vec3A::new(0.0, 0.0, 0.0),
-            Vec3A::new(0.0, 0.0, -1.0),
-            Vec3A::new(0.0, 1.0, 0.0),
+            Vec3A::ZERO,
+            -Vec3A::Z,
+            Vec3A::Y,
             90.0,
             16.0 / 9.0,
             0.1,

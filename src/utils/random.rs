@@ -10,8 +10,7 @@ use rand_distr::{Distribution, UnitDisc, UnitSphere};
 ///
 /// wrapper function around [UnitSphere]'s `sample` method
 pub fn rand_vec3_in_unit_sphere(rng: &mut impl Rng) -> Vec3A {
-    let arr = UnitSphere.sample(rng);
-    Vec3A::from_array(arr)
+    Vec3A::from_array(UnitSphere.sample(rng))
 }
 
 #[allow(dead_code/* , reason = "Want to A/B test with this sometimes" */)]
