@@ -2,8 +2,6 @@
 
 use std::{cmp::Ordering, fmt::Debug, sync::Arc};
 
-use rand::{prelude::IteratorRandom, Rng};
-
 use crate::{
     bounds::BoundingBox,
     hittables::{HitRecord, Hittable, HittableList},
@@ -39,17 +37,12 @@ pub fn box_cmp(a: &Option<BoundingBox>, b: &Option<BoundingBox>, axis_idx: usize
 
 impl BvhNode {
     /// Creates a new BvhNode
-    pub fn new(mut hitlist: HittableList, time0: f32, time1: f32, rng: &mut impl Rng) -> Self {
-        BvhNode::new_node(&mut hitlist[..], time0, time1, rng)
+    pub fn new(hitlist: HittableList, time0: f32, time1: f32) -> Self {
+        BvhNode::new_node(hitlist, time0, time1)
     }
 
     /// Implementation of `new`
-    fn new_node(
-        hitlist: &mut [Arc<dyn Hittable>],
-        time0: f32,
-        time1: f32,
-        rng: &mut impl Rng,
-    ) -> Self {
+    fn new_node(mut hitlist: HittableList, time0: f32, time1: f32) -> Self {
         assert!(!hitlist.is_empty(), "Given empty scene!");
 
         let span = hitlist.len();
@@ -58,8 +51,7 @@ impl BvhNode {
             1 => (hitlist[0].clone(), hitlist[0].clone()),
             2 => (hitlist[0].clone(), hitlist[1].clone()),
             _ => {
-                // TODO implement better axis decision-making
-                let axis_idx = (0..3).choose(rng).unwrap();
+                let axis_idx = hitlist.bounding_box(time0, time1).unwrap().longest_axis();
 
                 hitlist.sort_by(|a, b| {
                     box_cmp(
@@ -71,8 +63,10 @@ impl BvhNode {
 
                 let (half0, half1) = hitlist.split_at_mut(span / 2);
 
-                let left: Arc<dyn Hittable> = BvhNode::new_node(half0, time0, time1, rng).wrap();
-                let right: Arc<dyn Hittable> = BvhNode::new_node(half1, time0, time1, rng).wrap();
+                let left: Arc<dyn Hittable> =
+                    BvhNode::new_node(half0.to_owned(), time0, time1).wrap();
+                let right: Arc<dyn Hittable> =
+                    BvhNode::new_node(half1.to_owned(), time0, time1).wrap();
                 (left, right)
             }
         };
