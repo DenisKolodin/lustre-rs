@@ -291,19 +291,7 @@ where
 
         match node {
             // a leaf node delegates to its contained item
-            TreeNode::Leaf { items, .. } => {
-                let mut t_closest = t_max;
-                let mut rec = None;
-
-                for item in items {
-                    if let Some(hit_rec) = item.hit(ray, t_min, t_closest) {
-                        t_closest = hit_rec.t;
-                        rec = Some(hit_rec);
-                    }
-                }
-
-                rec
-            }
+            TreeNode::Leaf { items, .. } => items.hit(ray, t_min, t_max),
             TreeNode::Interior { left, right, .. } => {
                 // recurse into children
                 let left_hit = self.hit_impl(*left, ray, t_min, t_max);

@@ -11,12 +11,12 @@ use crate::{
 /// Type alias for a vector of objects implementing [Hittable]
 pub type HittableList = Vec<Arc<dyn Hittable>>;
 
-impl Hittable for HittableList {
+impl<T: Hittable> Hittable for Vec<T> {
     fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         let mut rec = None;
         let mut t_closest = t_max;
 
-        for hittable in self.iter() {
+        for hittable in self {
             let hit_result = hittable.hit(ray, t_min, t_closest);
             if let Some(HitRecord { t, .. }) = hit_result {
                 t_closest = t;

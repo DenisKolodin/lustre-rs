@@ -63,18 +63,6 @@ impl Hittable for QuadBox {
     }
 
     fn hit(&self, ray: &crate::ray::Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
-        // self.sides.hit(ray, t_min, t_max)
-        //  copy over HittableList hit impl because the above doesn't work
-        let mut rec = None;
-        let mut t_closest = t_max;
-
-        for hittable in self.sides.iter() {
-            let hit_result = hittable.hit(ray, t_min, t_closest);
-            if let Some(HitRecord { t, .. }) = hit_result {
-                t_closest = t;
-                rec = hit_result;
-            }
-        }
-        rec
+        self.sides.hit(ray, t_min, t_max)
     }
 }
