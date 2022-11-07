@@ -1,5 +1,7 @@
 //! A SAH-based Bounding Volume Hierarchy
 
+use std::sync::Arc;
+
 use crate::{
     bounds::BoundingBox,
     hittables::Hittable,
@@ -7,12 +9,11 @@ use crate::{
 };
 
 /// The discrete element making up the [Tree]
-#[derive(Debug)]
-pub enum TreeNode<T> {
+pub enum TreeNode {
     /// A terminal node containing `T` values
     Leaf {
         bbox: Option<BoundingBox>,
-        items: Vec<T>,
+        items: Vec<Arc<dyn Hittable>>,
     },
     /// A node that holds the indices into its Tree's [Arena]
     Interior {
@@ -22,7 +23,7 @@ pub enum TreeNode<T> {
     },
 }
 
-impl<T> TreeNode<T> {
+impl TreeNode {
     #[inline]
     pub fn get_bbox(&self) -> Option<BoundingBox> {
         *match self {
@@ -36,9 +37,8 @@ impl<T> TreeNode<T> {
 ///
 /// See [Arena] for more information on the allocator.
 ///
-#[derive(Debug)]
-pub struct Tree<T> {
-    arena: Arena<TreeNode<T>>,
+pub struct Tree {
+    arena: Arena<TreeNode>,
     root: ArenaIndex,
 }
 
@@ -48,11 +48,11 @@ pub struct Tree<T> {
 /// - the item itself
 /// - the item's bounding box
 /// - the bounding box's centroid
-#[derive(Debug, Clone, Copy)]
-struct ItemInfo<T> {
+#[derive(Clone)]
+struct ItemInfo {
     bbox: Option<BoundingBox>,
     centroid: Option<glam::Vec3A>,
-    item: T,
+    item: Arc<dyn Hittable>,
 }
 
 /// Holds the metadata of items being binned for SAH splitting
@@ -68,13 +68,10 @@ impl std::fmt::Display for Bin {
     }
 }
 
-impl<T> Tree<T>
-where
-    T: Clone + Hittable,
-{
+impl Tree {
     /// Adds a new leaf node to the Tree, returning the index for use in creation and intersection
     #[inline]
-    fn new_leaf(&mut self, info: Vec<ItemInfo<T>>) -> ArenaIndex {
+    fn new_leaf(&mut self, info: Vec<ItemInfo>) -> ArenaIndex {
         self.arena.add(TreeNode::Leaf {
             items: info.iter().map(|info| info.item.clone()).collect(),
             bbox: info
@@ -93,7 +90,7 @@ where
     /// Creates a new interior node by splitting the given items into child nodes.
     ///
     /// TODO more explanation
-    fn new_interior(&mut self, mut items: Vec<ItemInfo<T>>) -> ArenaIndex {
+    fn new_interior(&mut self, mut items: Vec<ItemInfo>) -> ArenaIndex {
         let num_items = items.len();
 
         // given few items, make leaf
@@ -224,7 +221,7 @@ where
             let left_idx = self.new_interior(left_items);
             let right_idx = self.new_interior(right_items);
 
-            self.arena[new_idx] = TreeNode::<T>::Interior {
+            self.arena[new_idx] = TreeNode::Interior {
                 bbox: Some(total_bbox),
                 left: left_idx,
                 right: right_idx,
@@ -237,7 +234,7 @@ where
     }
 
     /// Creates a new Tree using the given items
-    pub fn new(items: Vec<T>, time0: f32, time1: f32) -> Self {
+    pub fn new(items: Vec<Arc<dyn Hittable>>, time0: f32, time1: f32) -> Self {
         debug_assert!(!items.is_empty(), "Given empty scene!");
         // TODO find way to create Tree without making an empty one first
         let mut tree = Self {
@@ -250,7 +247,7 @@ where
         tree.arena = Arena::with_capacity((items.len() * 2) - 1);
 
         // Compute info per item
-        let added_info: Vec<ItemInfo<T>> = items
+        let added_info: Vec<ItemInfo> = items
             .into_iter()
             .map(|item| {
                 let bbox = item.bounding_box(time0, time1);
@@ -307,10 +304,7 @@ where
     }
 }
 
-impl<T> Hittable for Tree<T>
-where
-    T: Clone + Hittable + Sized,
-{
+impl Hittable for Tree {
     fn hit(
         &self,
         ray: &crate::ray::Ray,
