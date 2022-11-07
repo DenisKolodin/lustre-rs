@@ -118,10 +118,7 @@ impl Tree {
 
             // set up bins
             const NUM_BINS: usize = 16;
-            let mut bins = [Bin {
-                count: 0,
-                bbox: BoundingBox::default(),
-            }; NUM_BINS];
+            let mut bins = [Bin::default(); NUM_BINS];
 
             /// helper functions to correctly compute index into bins
             fn comp_bin_idx(off: f32) -> usize {
@@ -140,11 +137,14 @@ impl Tree {
                 let bin_idx = comp_bin_idx(off);
                 let bin = &mut bins[bin_idx];
                 bin.count += 1;
-                bin.bbox = bin.bbox.union(item.bbox.unwrap_or_default());
+                // bin.bbox = bin.bbox.union(item.bbox.unwrap_or_default());
+                if let Some(bbox) = item.bbox {
+                    bin.bbox = bin.bbox.union(bbox);
+                }
             }
 
             // set up costs
-            let mut costs = [0.0; NUM_BINS - 1];
+            let mut costs = [f32::MAX; NUM_BINS - 1];
 
             // Using two scans of the items, we can compute the SAH cost
             // `SurfaceArea_Left * Num_Left + SurfaceArea_Right * Num_Right`
@@ -153,22 +153,26 @@ impl Tree {
             // operand using the backward scan. We reuse the [Bin] struct
             // as it holds exactly the info needed for cost computation
 
-            let mut left_acc = Bin::default();
-
+            let mut acc = Bin::default();
             // forward scan uses the first bin up to second-to-last bin
-            for bin in 0..(NUM_BINS - 1) {
-                left_acc.bbox = left_acc.bbox.union(bins[bin].bbox);
-                left_acc.count += bins[bin].count;
-                costs[bin] += left_acc.count as f32 * left_acc.bbox.surface_area();
+            for bin_idx in 0..(NUM_BINS - 1) {
+                let bin = bins[bin_idx];
+                if bin.count > 0 {
+                    acc.bbox = acc.bbox.union(bin.bbox);
+                    acc.count += bin.count;
+                    costs[bin_idx] += bin.count as f32 * bin.bbox.surface_area();
+                }
             }
 
-            let mut right_acc = Bin::default();
-
+            acc = Bin::default();
             // backward scan uses the last bin down to second bin
-            for bin in (1..=(NUM_BINS - 1)).rev() {
-                right_acc.bbox = right_acc.bbox.union(bins[bin].bbox);
-                right_acc.count += bins[bin].count;
-                costs[bin - 1] += right_acc.count as f32 * right_acc.bbox.surface_area();
+            for bin_idx in (1..=(NUM_BINS - 1)).rev() {
+                let bin = bins[bin_idx];
+                if bin.count > 0 {
+                    acc.bbox = acc.bbox.union(bin.bbox);
+                    acc.count += bin.count;
+                    costs[bin_idx - 1] += bin.count as f32 * bin.bbox.surface_area();
+                }
             }
 
             // Find smallest split cost and its index into the bins array
@@ -210,12 +214,8 @@ impl Tree {
                     (Some(a), Some(b)) => a.min[axis_idx].total_cmp(&(b.min[axis_idx])),
                 });
 
-                let total_midpoint = total_bbox.min.lerp(total_bbox.max, 0.5)[axis_idx];
-
-                items.into_iter().partition(|item| match item.bbox {
-                    Some(bbox) => bbox.min[axis_idx] < total_midpoint,
-                    None => true,
-                })
+                let halves = items.split_at(num_items / 2);
+                (halves.0.to_owned(), halves.1.to_owned())
             };
 
             let left_idx = self.new_interior(left_items);
