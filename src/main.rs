@@ -1,8 +1,8 @@
 use rand::SeedableRng;
 
 use crate::{
-    bvh::BvhNode,
     cli::{Arguments, Parser},
+    tree::Tree,
 };
 
 mod bounds;
@@ -37,7 +37,7 @@ fn main() {
 
     // Get scene
     let (cam, world, dimensions) = scenes::get_scene(img_w, cli_args.scene, &mut rng);
-    let world = BvhNode::new(world, 0.0, 1.0, &mut rng);
+    let world = Tree::new(world, 0.0, 1.0);
 
     let renderer = render::Renderer::new(
         dimensions.x,

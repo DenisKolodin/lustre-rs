@@ -6,11 +6,10 @@ use glam::{UVec2, Vec3A};
 use rand::Rng;
 
 use crate::{
-    bvh::BvhNode, camera::Camera, color::Color, hittables::*, material::Material, textures::*,
+    camera::Camera, color::Color, hittables::*, material::Material, textures::*, tree::Tree,
 };
 
 /// Possible hard-coded scenes to choose from.
-#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, clap::clap_derive::ValueEnum)]
 pub enum SceneType {
     /// Test scene for materials development
@@ -634,7 +633,7 @@ fn gen_book2_scene(rng: &mut impl Rng) -> HittableList {
     }
 
     // BVH-ify the ground boxes
-    let mut all_objects: HittableList = vec![BvhNode::new(ground_boxes, 0.0, 1.0, rng).wrap()];
+    let mut all_objects: HittableList = vec![Tree::new(ground_boxes, 0.0, 1.0).wrap()];
 
     let light_mat = Arc::new(Material::DiffuseLight {
         albedo: Arc::new(SolidColor::new(Vec3A::ONE)),
@@ -727,7 +726,7 @@ fn gen_book2_scene(rng: &mut impl Rng) -> HittableList {
         })
         .collect();
 
-    let wrapped_spheres: Arc<dyn Hittable> = BvhNode::new(rand_sphere_group, 0.0, 1.0, rng).wrap();
+    let wrapped_spheres: Arc<dyn Hittable> = Tree::new(rand_sphere_group, 0.0, 1.0).wrap();
     all_objects.push(
         Transform::new(&wrapped_spheres)
             .with_axis_angle(glam::Vec3::Y, 15.0)
