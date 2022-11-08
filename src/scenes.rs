@@ -128,7 +128,7 @@ pub fn get_scene(
     (cam, scene, dimensions)
 }
 
-/// Retusn a [HittableList] containing a few spheres with unique materials
+/// Returns a [HittableList] containing a few spheres with unique materials
 fn get_mat_dev_scene() -> HittableList {
     //  Create ground sphere
     let ground_material = Arc::new(Material::Lambertian {

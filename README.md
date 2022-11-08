@@ -34,7 +34,7 @@ Learning Rust via [Peter Shirley's Ray Tracing in One Weekend](https://raytracin
 - [x] Implementing Book 1: [Ray Tracing in One Weekend](https://raytracing.github.io/books/RayTracingInOneWeekend.html) - 100%
 - [x] Documenting Book 1 implementation - 100%
 - [x] Implementing Book 2: [Ray Tracing: The Next Week](https://raytracing.github.io/books/RayTracingTheNextWeek.html) - 100%
-- [ ] Documenting Book 2 implementation - ongoing
+- [x] Documenting Book 2 implementation - 100%
 - [ ] Implementing Book 3: [Ray Tracing: The Rest of Your Life](https://raytracing.github.io/books/RayTracingTheRestOfYourLife.html)
 - [ ] Documenting Book 3 implementation
 - [ ] Look into other ways to expand this renderer. Possibilties:
