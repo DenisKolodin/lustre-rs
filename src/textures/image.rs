@@ -13,30 +13,27 @@ impl ImageMap {
     /// Creates a new [ImageMap]
     ///
     /// Loads the image located at `file_path`:
-    /// * if successful, holds the decoded [image::RgbImage] in an Option
+    /// * if successful, holds the decoded [image::RgbImage]
     /// * on error, holds a default "missing" texture
     ///
     /// Missing texture sourced from [The GMod fandom wiki](https://gmod.fandom.com/wiki/Missing_textures),
     /// available under CC-BY-SA
     pub fn new(file_path: std::path::PathBuf) -> Self {
-        use image::io::Reader;
-        let dyn_img = match Reader::open(&file_path) {
-            Ok(file_reader) => file_reader.decode(),
-            Err(_) => {
-                // TODO log file read error
-                // Adapted from [image::io::Reader] usage page
-                use std::io::Cursor;
-                Reader::new(Cursor::new(include_bytes!("../../resources/default.png")))
+        Self {
+            image: match image::io::Reader::open(&file_path) {
+                Ok(file_reader) => file_reader.decode(),
+                Err(_) => {
+                    // Adapted from [image::io::Reader] usage page
+                    image::io::Reader::new(std::io::Cursor::new(include_bytes!(
+                        "../../resources/default.png"
+                    )))
                     .with_guessed_format()
                     .expect("We should never fail with binary Cursor reads")
                     .decode()
+                }
             }
-        };
-
-        Self {
-            image: dyn_img
-                .map(|dyn_img| dyn_img.into_rgb8())
-                .expect("We should always have some image data to fall back on"),
+            .map(|dyn_img| dyn_img.into_rgb8())
+            .expect("We should always have some image data to fall back on"),
         }
     }
 }
@@ -52,7 +49,6 @@ impl Texture for ImageMap {
         let i = (i as u32).clamp(0, self.image.width() - 1);
         let j = (j as u32).clamp(0, self.image.height() - 1);
 
-        // let color_scale = 1.0 / 255.0;
         let pixel = self.image[(i, j)];
         Color::from(pixel)
     }

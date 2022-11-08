@@ -1,20 +1,26 @@
 //! A texture mapping alternating between two other Textures in a checkerboard fashion.
 
+use crate::{color::Color, textures::Texture};
 use std::sync::Arc;
 
-use glam::Vec3A;
-
-use crate::{color::Color, textures::Texture};
-
 /// A checkered texture alternating between two enclosed textures.
-pub struct Checkered {
-    pub even: Arc<dyn Texture>,
-    pub odd: Arc<dyn Texture>,
+#[derive(Debug)]
+pub struct Checkered<T, U>
+where
+    T: Texture,
+    U: Texture,
+{
+    pub even: Arc<T>,
+    pub odd: Arc<U>,
 }
 
-impl Checkered {
+impl<T, U> Checkered<T, U>
+where
+    T: Texture + Sized,
+    U: Texture + Sized,
+{
     /// Creates a new checkered texture
-    pub fn new(o: &Arc<dyn Texture>, e: &Arc<dyn Texture>) -> Self {
+    pub fn new(e: &Arc<T>, o: &Arc<U>) -> Self {
         Self {
             even: Arc::clone(e),
             odd: Arc::clone(o),
@@ -22,8 +28,12 @@ impl Checkered {
     }
 }
 
-impl Texture for Checkered {
-    fn color(&self, u: f32, v: f32, point: Vec3A) -> Color {
+impl<T, U> Texture for Checkered<T, U>
+where
+    T: Texture,
+    U: Texture,
+{
+    fn color(&self, u: f32, v: f32, point: glam::Vec3A) -> Color {
         let sin_x = (point * 10.0).x.sin();
         let sin_y = (point * 10.0).y.sin();
         let sin_z = (point * 10.0).z.sin();

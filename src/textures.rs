@@ -2,8 +2,6 @@
 //!
 //! Textures can be procedural color generation, image lookup, or a combination of both.
 
-use std::fmt::Debug;
-
 use glam::Vec3A;
 
 pub use crate::color::Color as SolidColor;
@@ -23,7 +21,7 @@ pub trait Texture: Send + Sync {
     fn color(&self, u: f32, v: f32, point: Vec3A) -> Color;
 }
 
-impl Debug for dyn Texture {
+impl std::fmt::Debug for dyn Texture {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
