@@ -2,7 +2,7 @@
 
 use std::{path::PathBuf, sync::Arc};
 
-use glam::{UVec2, Vec3A};
+use glam::Vec3A;
 use rand::Rng;
 
 use crate::{
@@ -39,7 +39,7 @@ pub fn get_scene(
     image_width: u32,
     scene_type: SceneType,
     rng: &mut impl Rng,
-) -> (Camera, HittableList, UVec2) {
+) -> (Camera, HittableList, (u32, u32)) {
     // Setup default camera properties
     // uncomment the `mut` once its needed
     let mut aspect_ratio = 16.0 / 9.0;
@@ -123,7 +123,7 @@ pub fn get_scene(
     );
 
     let image_height = (image_width as f32 / aspect_ratio) as u32;
-    let dimensions = UVec2::new(image_width, image_height);
+    let dimensions = (image_width, image_height);
 
     (cam, scene, dimensions)
 }

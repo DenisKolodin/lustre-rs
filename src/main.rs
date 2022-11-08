@@ -40,8 +40,8 @@ fn main() {
     let world = Tree::new(world, 0.0, 1.0);
 
     let renderer = render::Renderer::new(
-        dimensions.x,
-        dimensions.y,
+        dimensions.0,
+        dimensions.1,
         cli_args.samples_per_pixel,
         cli_args.bounce_depth,
     );
