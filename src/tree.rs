@@ -8,24 +8,39 @@ use crate::{
     utils::arena::{Arena, ArenaIndex},
 };
 
-/// The discrete element making up the [Tree]
+/// The discrete element making up the [Tree].
+///
+/// [TreeNode]s do not directly contain their children nodes, instead holding indices into the [Tree]'s [Arena].
+/// This removes the [Box]-related complications from typical recursive graph structures in Rust.
 pub enum TreeNode {
-    /// A terminal node containing `T` values
+    /// A terminal node containing one or more [Hittable]s
     Leaf {
+        /// The combined [BoundingBox] of all contained items
+        ///
+        /// is `None` when every contained item has no bounding box
         bbox: Option<BoundingBox>,
+        /// The set of items with which to later intersect
         items: Vec<Arc<dyn Hittable>>,
     },
     /// A node that holds the indices into its Tree's [Arena]
     Interior {
+        /// The combined [BoundingBox] of the two child nodes
+        ///
+        /// is `None` when both children have no bounding box
         bbox: Option<BoundingBox>,
+        /// The left child's index in the tree's [Arena]
         left: ArenaIndex,
+        /// The right child's index in the tree's [Arena]
         right: ArenaIndex,
     },
 }
 
 impl TreeNode {
+    /// Returns the [BoundingBox] of the [TreeNode]
+    ///
+    /// Since both enum variants have a bounding box, this functions helps reduce the amount of code duplication
     #[inline]
-    pub fn get_bbox(&self) -> Option<BoundingBox> {
+    fn get_bbox(&self) -> Option<BoundingBox> {
         *match self {
             TreeNode::Leaf { bbox, .. } => bbox,
             TreeNode::Interior { bbox, .. } => bbox,
@@ -36,29 +51,30 @@ impl TreeNode {
 /// An acceleration structure using arena allocation and the surface area hueristic (SAH) splitting method.
 ///
 /// See [Arena] for more information on the allocator.
-///
 pub struct Tree {
+    /// The arena allocator that contains the tree's [TreeNode]s
     arena: Arena<TreeNode>,
+    /// The index into the arena of the root [TreeNode]
     root: ArenaIndex,
 }
 
 /// Holds the precomputed information of an item necessary to calculate the SAH
-///
-/// Contains:
-/// - the item itself
-/// - the item's bounding box
-/// - the bounding box's centroid
 #[derive(Clone)]
 struct ItemInfo {
+    /// The bounding box of the contained item
     bbox: Option<BoundingBox>,
+    /// The centroid of the bounding box
     centroid: Option<glam::Vec3A>,
+    /// The item itself
     item: Arc<dyn Hittable>,
 }
 
 /// Holds the metadata of items being binned for SAH splitting
 #[derive(Debug, Default, Clone, Copy)]
 struct Bin {
+    /// The combined bounding box of items that belong in this bin
     bbox: BoundingBox,
+    /// the number of items belong in this bin
     count: usize,
 }
 
@@ -89,7 +105,9 @@ impl Tree {
 
     /// Creates a new interior node by splitting the given items into child nodes.
     ///
-    /// TODO more explanation
+    /// If the SAH-computed split cost is less than simply going through all the items, do a SAH-based split and recurse.
+    /// Otherwise, do a simpler sort-and-half then recurse. If all items are unbounded, make a leaf node directly.
+    /// This function short-circuits directly into creating a leaf node with less than 4 items.
     fn new_interior(&mut self, mut items: Vec<ItemInfo>) -> ArenaIndex {
         let num_items = items.len();
 
@@ -234,6 +252,9 @@ impl Tree {
     }
 
     /// Creates a new Tree using the given items
+    ///
+    /// This function serves as convenient wrapper for the Tree functionality;
+    /// it computes the [ItemInfo] for all items in the scene then calls [Tree::new_interior]
     pub fn new(items: Vec<Arc<dyn Hittable>>, time0: f32, time1: f32) -> Self {
         debug_assert!(!items.is_empty(), "Given empty scene!");
         // TODO find way to create Tree without making an empty one first
@@ -268,7 +289,8 @@ impl Tree {
 
     /// The underlying intersection routine for use in the [Hittable] trait implementation
     ///
-    /// Since [Hittable::hit] doesn't use tree indices, we have to call this routine instead
+    /// Since [Hittable::hit] doesn't use tree indices, we have to call this routine
+    /// in order to recursively build the acceleration structure
     fn hit_impl(
         &self,
         idx: ArenaIndex,
@@ -276,7 +298,6 @@ impl Tree {
         t_min: f32,
         t_max: f32,
     ) -> Option<crate::hittables::HitRecord> {
-        // need a private impl because we need recursion w/ indices
         let node = &self.arena[idx];
 
         // if there's a box, check against it first
