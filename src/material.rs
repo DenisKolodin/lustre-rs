@@ -77,11 +77,9 @@ impl Material {
         match self {
             Material::Isotropic { albedo } => {
                 // returns a random unit direction
-                let scattered = Ray::new(rec.point, rand_unit_v, ray.time);
-                let attenuation = albedo.color(rec.u, rec.v, rec.point).into();
                 Some(ScatterRecord {
-                    ray: scattered,
-                    attenuation,
+                    ray: Ray::new(rec.point, rand_unit_v, ray.time),
+                    attenuation: albedo.color(rec.u, rec.v, rec.point).into(),
                 })
             }
             Material::Lambertian { albedo } => {
@@ -92,12 +90,9 @@ impl Material {
                     scatter_dir = rec.normal;
                 }
 
-                let scattered = Ray::new(rec.point, scatter_dir, ray.time);
-                let attenuation = albedo.color(rec.u, rec.v, rec.point).into();
-
                 Some(ScatterRecord {
-                    ray: scattered,
-                    attenuation,
+                    ray: Ray::new(rec.point, scatter_dir, ray.time),
+                    attenuation: albedo.color(rec.u, rec.v, rec.point).into(),
                 })
             }
             Material::Metal { albedo, roughness } => {
@@ -109,15 +104,12 @@ impl Material {
                     ray.time,
                 );
 
-                let attenuation = albedo.color(rec.u, rec.v, rec.point).into();
-
                 (scattered.direction.dot(rec.normal) > 0.0).then_some(ScatterRecord {
                     ray: scattered,
-                    attenuation,
+                    attenuation: albedo.color(rec.u, rec.v, rec.point).into(),
                 })
             }
             Material::Dielectric { refract_index } => {
-                let attenuation = Vec3A::ONE;
                 let refract_ratio = if rec.front_face {
                     1.0 / refract_index
                 } else {
@@ -138,11 +130,9 @@ impl Material {
                     refract(normed_dir, rec.normal, refract_ratio)
                 };
 
-                let scattered = Ray::new(rec.point, direction, ray.time);
-
                 Some(ScatterRecord {
-                    ray: scattered,
-                    attenuation,
+                    ray: Ray::new(rec.point, direction, ray.time),
+                    attenuation: Vec3A::ONE,
                 })
             }
             Material::DiffuseLight { .. } => None,
