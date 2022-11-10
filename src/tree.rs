@@ -295,6 +295,7 @@ impl Tree {
         &self,
         idx: ArenaIndex,
         ray: &crate::ray::Ray,
+        ray_inv_dir: glam::Vec3A,
         t_min: f32,
         t_max: f32,
     ) -> Option<crate::hittables::HitRecord> {
@@ -302,7 +303,7 @@ impl Tree {
 
         // if there's a box, check against it first
         if let Some(bbox) = node.get_bbox() {
-            if !bbox.hit(ray, t_min, t_max) {
+            if !bbox.hit_with_inv(ray, ray_inv_dir, t_min, t_max) {
                 return None;
             }
         }
@@ -312,11 +313,11 @@ impl Tree {
             TreeNode::Leaf { items, .. } => items.hit(ray, t_min, t_max),
             TreeNode::Interior { left, right, .. } => {
                 // recurse into children
-                let left_hit = self.hit_impl(*left, ray, t_min, t_max);
+                let left_hit = self.hit_impl(*left, ray, ray_inv_dir, t_min, t_max);
 
                 let t_max = left_hit.as_ref().map_or(t_max, |rec| rec.t);
 
-                match self.hit_impl(*right, ray, t_min, t_max) {
+                match self.hit_impl(*right, ray, ray_inv_dir, t_min, t_max) {
                     Some(right_hit) => Some(right_hit),
                     None => left_hit,
                 }
@@ -332,7 +333,7 @@ impl Hittable for Tree {
         t_min: f32,
         t_max: f32,
     ) -> Option<crate::hittables::HitRecord> {
-        self.hit_impl(self.root, ray, t_min, t_max)
+        self.hit_impl(self.root, ray, ray.direction.recip(), t_min, t_max)
     }
 
     fn bounding_box(&self, _time0: f32, _time1: f32) -> Option<BoundingBox> {
