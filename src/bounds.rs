@@ -52,6 +52,33 @@ impl BoundingBox {
         true
     }
 
+    /// Returns whether or not the ray hits this bounding box, using the ray's precomputed inverse direction.
+    ///
+    /// Similar to [BoundingBox::hit], this checks for slab intersection in each of the 3 dimensions.
+    /// In addition, minimizes branching by using [f32::min] and [f32::max] intrinsics.
+    /// Based on the branchless bounding box intersection codes from
+    /// https://tavianator.com/2022/ray_box_boundary.html
+    pub fn hit_with_inv(&self, ray: &Ray, ray_dir_inv: Vec3A, t_min: f32, t_max: f32) -> bool {
+        let diff0 = self.min - ray.origin;
+        let diff1 = self.max - ray.origin;
+
+        let mut t_near = t_min;
+        let mut t_far = t_max;
+
+        // Check for slab intersection in each dimension
+        for axis_idx in 0..3 {
+            let inverse_dir = ray_dir_inv[axis_idx];
+            let t0 = diff0[axis_idx] * inverse_dir;
+            let t1 = diff1[axis_idx] * inverse_dir;
+
+            // these set of comparison allow for corner and parallel intersection checks
+            t_near = t_near.max(t0).min(t_near.max(t1));
+            t_far = t_far.min(t0).max(t_far.min(t1));
+        }
+
+        t_near <= t_far
+    }
+
     /// Returns a bounding box enclosing this and the other box.
     ///
     /// In other words, combines the two boxes by taking:
