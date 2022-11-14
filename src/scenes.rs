@@ -32,6 +32,8 @@ pub enum SceneType {
     RandomLights,
     /// The Final Scene from Ray Tracing in One Weekend: The Next Week
     FinalScene,
+    /// Debug Scene
+    Debug
 }
 
 /// Returns a [Camera], a list of objects ([HittableList]), and the image dimensions as a tuple.
@@ -107,6 +109,15 @@ pub fn get_scene(
             vert_fov = 40.0;
             gen_book2_scene(rng)
         }
+        SceneType::Debug => {
+            aspect_ratio = 1.0;
+            bg_color = Color::new(Vec3A::ZERO);
+            look_from = Vec3A::new(278.0, 278.0, -800.0);
+            look_at = Vec3A::new(278.0, 278.0, 0.0);
+            vert_fov = 40.0;
+            gen_debug_scene()
+        },
+        
     };
 
     // set up camera with (possibly modified) properies
@@ -510,6 +521,57 @@ fn gen_cornell_box2() -> HittableList {
         short_box.wrap(),
         tall_box.wrap(),
     ]
+}
+
+fn box_helper() -> HittableList {
+    let red_diffuse = Arc::new(Material::Lambertian {
+        albedo: Arc::new(SolidColor::new(Vec3A::new(0.65, 0.05, 0.05))),
+    });
+    let white_diffuse = Arc::new(Material::Lambertian {
+        albedo: Arc::new(SolidColor::new(Vec3A::splat(0.73))),
+    });
+    let green_diffuse = Arc::new(Material::Lambertian {
+        albedo: Arc::new(SolidColor::new(Vec3A::new(0.12, 0.45, 0.15))),
+    });
+    let light = Arc::new(Material::DiffuseLight {
+        albedo: Arc::new(SolidColor::new(Vec3A::ONE)),
+        brightness: 15.0,
+    });
+
+    // yz rect - zero x
+    let left_side = Quad::from_bounds_k(0.0, 555.0, 0.0, 555.0, 555.0, 0, &red_diffuse);
+    // yz rect - zero x
+    let right_side = Quad::from_bounds_k(0.0, 555.0, 0.0, 555.0, 0.0, 0, &green_diffuse);
+    // xz rect - zero y
+    let light_rec = Quad::from_bounds_k(213.0, 343.0, 227.0, 332.0, 554.9, 1, &light);
+    // xz rect - zero y
+    let bottom_side = Quad::from_bounds_k(0.0, 555.0, 0.0, 555.0, 0.0, 1, &white_diffuse);
+    // xz rect - zero y
+    let top_side = Quad::from_bounds_k(0.0, 555.0, 0.0, 555.0, 555.0, 1, &white_diffuse);
+    // xy rect - zero z
+    let back_side = Quad::from_bounds_k(0.0, 555.0, 0.0, 555.0, 555.0, 2, &white_diffuse);
+
+    vec![
+        left_side.wrap(),
+        right_side.wrap(),
+        bottom_side.wrap(),
+        top_side.wrap(),
+        back_side.wrap(),
+        light_rec.wrap(),
+    ]
+}
+
+fn gen_debug_scene() -> HittableList {
+    let mut world_box = box_helper();
+    let white_diffuse = Arc::new(Material::Lambertian {
+        albedo: Arc::new(SolidColor::new(Vec3A::splat(0.73))),
+    });
+    let close_sphere = Sphere::new(Vec3A::new(212.5, 82.5, 147.5), 82.5, &white_diffuse);
+    let far_sphere = Sphere::new(Vec3A::new(347.5, 165.0, 377.5), 82.5, &white_diffuse);
+
+    world_box.push(close_sphere.wrap());
+    world_box.push(far_sphere.wrap());
+    world_box
 }
 
 /// Returns a [HittableList] containing randomly-generated spheres, some emissive
