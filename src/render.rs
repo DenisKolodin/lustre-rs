@@ -76,21 +76,15 @@ impl Renderer {
             .enumerate_pixels_mut()
             .par_bridge()
             .progress_with(progress_bar)
-            .for_each(|indexed_pixel| {
-                // unpack the enumeration
-                let (x, y, pixel) = indexed_pixel;
-
+            .for_each(|(x, y, pixel)| {
                 // map reduce N samples into single Vec3A
                 let mut color_v: Vec3A = (0..self.samples_per_pixel)
                     .into_par_iter()
                     .map_init(
-                        || SmallRng::from_rng(rand::thread_rng()),
+                        // from_rng(...) gives Result, can assume it won't fail
+                        || SmallRng::from_rng(&mut rand::thread_rng()).unwrap(),
                         // current sample # doesn't matter, ignore
-                        |rng, _| {
-                            // from_rng(...) gives Result, unpack here
-                            let rng = rng.as_mut().unwrap();
-                            self.compute_pixel_v(&cam, &world, x, y, rng)
-                        },
+                        |rng, _| self.compute_pixel_v(&cam, &world, x, y, rng),
                     )
                     .sum();
 
