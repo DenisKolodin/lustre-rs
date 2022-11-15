@@ -20,20 +20,16 @@ impl ImageMap {
     /// available under CC-BY-SA
     pub fn new(file_path: std::path::PathBuf) -> Self {
         Self {
-            image: match image::io::Reader::open(&file_path) {
-                Ok(file_reader) => file_reader.decode(),
+            image: match image::open(&file_path) {
+                Ok(img) => img,
                 Err(_) => {
-                    // Adapted from [image::io::Reader] usage page
-                    image::io::Reader::new(std::io::Cursor::new(include_bytes!(
-                        "../../resources/default.png"
-                    )))
-                    .with_guessed_format()
-                    .expect("We should never fail with binary Cursor reads")
-                    .decode()
+                    match image::load_from_memory(include_bytes!("../../resources/default.png")) {
+                        Ok(default) => default,
+                        Err(_) => unreachable!("We should have access to the default image"),
+                    }
                 }
             }
-            .map(|dyn_img| dyn_img.into_rgb8())
-            .expect("We should always have some image data to fall back on"),
+            .into_rgb8(),
         }
     }
 }
