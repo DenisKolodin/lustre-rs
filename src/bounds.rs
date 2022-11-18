@@ -5,7 +5,7 @@ use glam::Vec3A;
 use crate::ray::Ray;
 
 /// An axis aligned bounding box
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct BoundingBox {
     pub min: Vec3A,
     pub max: Vec3A,
@@ -146,5 +146,21 @@ impl Default for BoundingBox {
             min: Vec3A::splat(f32::MAX),
             max: Vec3A::splat(f32::MIN),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn default_union() {
+        let def = BoundingBox::default();
+        let zeroes = BoundingBox::new(Vec3A::ZERO, Vec3A::ZERO);
+        assert_eq!(
+            def.union(zeroes),
+            zeroes,
+            "The union of the default bbox with another bbox should be equal to the other bbox"
+        )
     }
 }
