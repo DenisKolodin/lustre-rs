@@ -73,7 +73,7 @@ impl Material {
     pub fn scatter(&self, ray: &Ray, rec: &HitRecord, rng: &mut impl Rng) -> Option<ScatterRecord> {
         // common calcs
         let normed_dir = ray.direction.normalize();
-        let rand_unit_v = crate::utils::random::rand_vec3_in_unit_sphere(rng);
+        let rand_unit_v = crate::utils::random::rand_vec3_on_unit_sphere(rng);
         match self {
             Material::Isotropic { albedo } => {
                 // returns a random unit direction

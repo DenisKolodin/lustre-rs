@@ -9,14 +9,14 @@ use rand_distr::{Distribution, UnitDisc, UnitSphere};
 /// Generates a random [Vec3A] within the unit sphere (radius 1).
 ///
 /// wrapper function around [UnitSphere]'s `sample` method
-pub fn rand_vec3_in_unit_sphere(rng: &mut impl Rng) -> Vec3A {
+pub fn rand_vec3_on_unit_sphere(rng: &mut impl Rng) -> Vec3A {
     Vec3A::from_array(UnitSphere.sample(rng))
 }
 
 #[allow(dead_code/* , reason = "Want to A/B test with this sometimes" */)]
 /// Generates a random [Vec3A] within the same unit hemisphere as the given normal.
-pub fn rand_vec3_in_unit_hemisphere(rng: &mut impl Rng, normal: Vec3A) -> Vec3A {
-    let mut unit_v = rand_vec3_in_unit_sphere(rng);
+pub fn rand_vec3_on_unit_hemisphere(rng: &mut impl Rng, normal: Vec3A) -> Vec3A {
+    let mut unit_v = rand_vec3_on_unit_sphere(rng);
     if unit_v.dot(normal) < 0.0 {
         unit_v = -unit_v;
     }
