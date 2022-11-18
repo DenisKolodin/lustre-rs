@@ -33,7 +33,7 @@ pub enum SceneType {
     /// The Final Scene from Ray Tracing in One Weekend: The Next Week
     FinalScene,
     /// Debug Scene
-    Debug
+    Debug,
 }
 
 /// Returns a [Camera], a list of objects ([HittableList]), and the image dimensions as a tuple.
@@ -116,8 +116,7 @@ pub fn get_scene(
             look_at = Vec3A::new(278.0, 278.0, 0.0);
             vert_fov = 40.0;
             gen_debug_scene()
-        },
-        
+        }
     };
 
     // set up camera with (possibly modified) properies
