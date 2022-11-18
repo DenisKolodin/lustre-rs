@@ -37,7 +37,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_rand_unit_sphere() {
+    fn rand_unit_sphere() {
         let mut rng = rand::thread_rng();
         let res = rand_vec3_on_unit_sphere(&mut rng);
         assert!(
@@ -48,7 +48,7 @@ mod tests {
     }
 
     #[test]
-    fn test_rand_unit_disk() {
+    fn rand_unit_disk() {
         let mut rng = rand::thread_rng();
         let res = rand_vec3_in_unit_disk(&mut rng);
         assert!(
