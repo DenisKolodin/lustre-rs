@@ -19,4 +19,4 @@ noise = "0.8"
 num-traits = "0.2.15"
 rand = { version = "0.8.5", features = ["small_rng"] }
 rand_distr = "0.4.3"
-rayon = "1.5.3"
+rayon = "1.6.0"
