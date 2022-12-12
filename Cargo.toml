@@ -14,8 +14,8 @@ categories = ["rendering"]
 [dependencies]
 clap = { version = "4.0", features = ["derive", "wrap_help"] }
 glam = { version = "0.22", features = ["debug-glam-assert", "rand"] }
-image = {version = "0.24", default-features = false, features = ["png"]}
-indicatif = { version = "0.17.1", features = ["rayon"]}
+image = { version = "0.24", default-features = false, features = ["png"] }
+indicatif = { version = "0.17.1", features = ["rayon"] }
 noise = "0.8"
 num-traits = "0.2.15"
 rand = { version = "0.8.5", features = ["small_rng"] }
