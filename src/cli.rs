@@ -5,7 +5,7 @@ pub use clap::Parser;
 
 use crate::scenes::SceneType;
 
-/// Argument defintions for [clap::Parser]
+/// Argument definitions for [clap::Parser]
 #[derive(Parser, Debug)]
 #[clap(version, about)]
 pub struct Arguments {
@@ -46,6 +46,10 @@ pub struct Arguments {
     /// The hardcoded scene to use
     #[clap(short, long, value_enum, default_value_t = SceneType::CoverPhoto)]
     pub scene: SceneType,
+
+    /// The seed used for psuedorandom number generation
+    #[clap(long)]
+    pub seed: Option<u64>,
 }
 
 fn valid_count<T>(s: &str) -> Result<T, String>

@@ -30,6 +30,9 @@ fn main() {
     let mut rng = if cfg!(debug_assertions) {
         // if debugging, use deterministic seed
         rand::rngs::SmallRng::seed_from_u64(0)
+    } else if let Some(seed) = cli_args.seed {
+        // use user-provided seed if available
+        rand::rngs::SmallRng::seed_from_u64(seed)
     } else {
         // otherwise real psuedo-randomness
         rand::rngs::SmallRng::from_entropy()
