@@ -1,4 +1,5 @@
 //! Bounding Volume Hierarchy
+#![allow(dead_code)]
 
 use std::{cmp::Ordering, fmt::Debug, sync::Arc};
 
