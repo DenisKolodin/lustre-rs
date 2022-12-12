@@ -109,7 +109,7 @@ impl Tree {
     /// If the SAH-computed split cost is less than simply going through all the items, do a SAH-based split and recurse.
     /// Otherwise, do a simpler sort-and-half then recurse. If all items are unbounded, make a leaf node directly.
     /// This function short-circuits directly into creating a leaf node with less than 4 items.
-    fn new_interior(&mut self, mut items: Vec<ItemInfo>) -> ArenaIndex {
+    fn new_interior(&mut self, items: Vec<ItemInfo>) -> ArenaIndex {
         let num_items = items.len();
 
         // given few items, make leaf
@@ -207,6 +207,16 @@ impl Tree {
             // normalize cost
             let min_cost = 0.5 + min_cost / total_bbox.surface_area();
 
+            // Find bin with most items
+            let (max_bin_idx, _) = bins
+                .iter()
+                .enumerate()
+                .max_by(|(_, bin1), (_, bin2)| bin1.count.cmp(&bin2.count))
+                .unwrap();
+
+            // normalize max bin count index
+            let max_bin_idx = (max_bin_idx.max(1)).min(NUM_BINS - 2);
+
             // init arena space before children
             let new_idx = self.arena.add(TreeNode::Interior {
                 bbox: None,
@@ -214,7 +224,9 @@ impl Tree {
                 right: 0,
             });
 
-            // if its better to split, do SAH split
+            // if its better to split, do SAH split (min_cost compare)
+            // otherwise split items based on highest item count
+
             let (left_items, right_items) = if min_cost < leaf_cost {
                 items.into_iter().partition(|item| match item.centroid {
                     Some(centroid) => {
@@ -225,17 +237,35 @@ impl Tree {
                     None => true,
                 })
             } else {
-                // otherwise split items based on total_bbox cmp
-                items.sort_by(|a, b| match (a.bbox, b.bbox) {
-                    (None, None) => unreachable!(),
-                    (None, Some(_)) => std::cmp::Ordering::Less,
-                    (Some(_), None) => std::cmp::Ordering::Greater,
-                    (Some(a), Some(b)) => a.min[axis_idx].total_cmp(&(b.min[axis_idx])),
-                });
+                items.into_iter().partition(|item| match item.centroid {
+                    Some(centroid) => {
+                        let off = centroid_bbox.offset(centroid)[axis_idx];
+                        let bin_idx = comp_bin_idx(off);
 
-                let halves = items.split_at(num_items / 2);
-                (halves.0.to_owned(), halves.1.to_owned())
+                        bin_idx >= max_bin_idx
+                    }
+                    None => true,
+                })
             };
+
+            // let min_cost_cmp = | i | i <= min_bin_idx;
+            // let max_item_cmp = |i | i >= max_bin_idx;
+
+            // let cmp: &dyn Fn(usize) -> bool = if min_cost < leaf_cost {
+            //     &min_cost_cmp
+            // } else {
+            //     &max_item_cmp
+            // };
+
+            // let (left_items, right_items) =
+            //     items.into_iter().partition(|item| match item.centroid {
+            //         Some(centroid) => {
+            //             let off = centroid_bbox.offset(centroid)[axis_idx];
+            //             let bin_idx = comp_bin_idx(off);
+            //             cmp(bin_idx)
+            //         }
+            //         None => true,
+            //     });
 
             let left_idx = self.new_interior(left_items);
             let right_idx = self.new_interior(right_items);
