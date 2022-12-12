@@ -1,9 +1,13 @@
 //! Render an image given a [Camera] and a [Hittable].
 
 use glam::Vec3A;
-use indicatif::ParallelProgressIterator;
 use rand::{rngs::SmallRng, Rng, SeedableRng};
-use rayon::prelude::*;
+
+#[cfg(feature = "parallel")]
+use {indicatif::ParallelProgressIterator, rayon::prelude::*};
+
+#[cfg(not(feature = "parallel"))]
+use indicatif::ProgressIterator;
 
 use crate::{camera::Camera, color::Color, hittables::Hittable, utils::progress::get_progressbar};
 
@@ -72,6 +76,7 @@ impl Renderer {
             image::ImageBuffer::new(self.image_width, self.image_height);
 
         // Generate image
+        #[cfg(feature = "parallel")]
         img_buf
             .enumerate_pixels_mut()
             .par_bridge()
@@ -85,6 +90,31 @@ impl Renderer {
                         || SmallRng::from_rng(&mut rand::thread_rng()).unwrap(),
                         // current sample # doesn't matter, ignore
                         |rng, _| self.compute_pixel_v(&cam, &world, x, y, rng),
+                    )
+                    .sum();
+
+                // Account for number of samples
+                color_v /= self.samples_per_pixel as f32;
+
+                // "gamma" correction
+                color_v = color_v.powf(0.5); // sqrt
+
+                // modify pixel with generated color value
+                *pixel = image::Rgb::<u8>::from(Color::new(color_v));
+            });
+        #[cfg(not(feature = "parallel"))]
+        img_buf
+            .enumerate_pixels_mut()
+            .progress_with(progress_bar)
+            .for_each(|(x, y, pixel)| {
+                // map reduce N samples into single Vec3A
+                let mut color_v: Vec3A = (0..self.samples_per_pixel)
+                    .map(
+                        // current sample # doesn't matter, ignore
+                        |_| {
+                            let rng = &mut SmallRng::from_rng(&mut rand::thread_rng()).unwrap();
+                            self.compute_pixel_v(&cam, &world, x, y, rng)
+                        },
                     )
                     .sum();
 
