@@ -4,7 +4,8 @@ use std::sync::Arc;
 
 use crate::{
     bounds::BoundingBox,
-    hittables::Hittable,
+    hittables::{HitRecord, Hittable},
+    ray::Ray,
     utils::arena::{Arena, ArenaIndex},
 };
 
@@ -294,11 +295,11 @@ impl Tree {
     fn hit_impl(
         &self,
         idx: ArenaIndex,
-        ray: &crate::ray::Ray,
+        ray: &Ray,
         ray_inv_dir: glam::Vec3A,
         t_min: f32,
         t_max: f32,
-    ) -> Option<crate::hittables::HitRecord> {
+    ) -> Option<HitRecord> {
         let node = &self.arena[idx];
 
         // if there's a box, check against it first
@@ -327,12 +328,7 @@ impl Tree {
 }
 
 impl Hittable for Tree {
-    fn hit(
-        &self,
-        ray: &crate::ray::Ray,
-        t_min: f32,
-        t_max: f32,
-    ) -> Option<crate::hittables::HitRecord> {
+    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         self.hit_impl(self.root, ray, ray.direction.recip(), t_min, t_max)
     }
 
