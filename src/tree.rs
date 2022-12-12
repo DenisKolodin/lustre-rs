@@ -215,7 +215,7 @@ impl Tree {
                 .unwrap();
 
             // normalize max bin count index
-            let max_bin_idx = (max_bin_idx.max(1)).min(NUM_BINS - 2);
+            let max_bin_idx = max_bin_idx.clamp(1, NUM_BINS - 2);
 
             // init arena space before children
             let new_idx = self.arena.add(TreeNode::Interior {
@@ -225,8 +225,6 @@ impl Tree {
             });
 
             // if its better to split, do SAH split (min_cost compare)
-            // otherwise split items based on highest item count
-
             let (left_items, right_items) = if min_cost < leaf_cost {
                 items.into_iter().partition(|item| match item.centroid {
                     Some(centroid) => {
@@ -237,19 +235,19 @@ impl Tree {
                     None => true,
                 })
             } else {
+                // otherwise split items based on highest item count
                 items.into_iter().partition(|item| match item.centroid {
                     Some(centroid) => {
                         let off = centroid_bbox.offset(centroid)[axis_idx];
                         let bin_idx = comp_bin_idx(off);
-
                         bin_idx >= max_bin_idx
                     }
                     None => true,
                 })
             };
 
-            // let min_cost_cmp = | i | i <= min_bin_idx;
-            // let max_item_cmp = |i | i >= max_bin_idx;
+            // let min_cost_cmp = |i| i <= min_bin_idx;
+            // let max_item_cmp = |i| i >= max_bin_idx;
 
             // let cmp: &dyn Fn(usize) -> bool = if min_cost < leaf_cost {
             //     &min_cost_cmp
