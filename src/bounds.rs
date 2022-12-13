@@ -2,7 +2,7 @@
 
 use glam::Vec3A;
 
-use crate::ray::Ray;
+use crate::{ray::Ray, utils::Axis};
 
 /// An axis aligned bounding box
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -30,7 +30,7 @@ impl BoundingBox {
         let diff1 = self.max - ray.origin;
 
         // Check for slab intersection in each dimension
-        for axis_idx in 0..3 {
+        for axis_idx in Axis::AXES {
             let inverse_dir = inverse_dir[axis_idx];
             let t0 = diff0[axis_idx] * inverse_dir;
             let t1 = diff1[axis_idx] * inverse_dir;
@@ -66,7 +66,7 @@ impl BoundingBox {
         let mut t_far = t_max;
 
         // Check for slab intersection in each dimension
-        for axis_idx in 0..3 {
+        for axis_idx in Axis::AXES {
             let inverse_dir = ray_dir_inv[axis_idx];
             let t0 = diff0[axis_idx] * inverse_dir;
             let t1 = diff1[axis_idx] * inverse_dir;
@@ -112,14 +112,14 @@ impl BoundingBox {
         d.x * d.y * d.z
     }
 
-    pub fn longest_axis(&self) -> usize {
+    pub fn longest_axis(&self) -> Axis {
         let d = self.diagonal();
         if d.x > d.y && d.x > d.z {
-            0
+            Axis::X
         } else if d.y > d.z {
-            1
+            Axis::Y
         } else {
-            2
+            Axis::Z
         }
     }
 

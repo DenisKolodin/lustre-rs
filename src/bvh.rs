@@ -7,7 +7,7 @@ use crate::{
     bounds::BoundingBox,
     hittables::{HitRecord, Hittable, HittableList},
     ray::Ray,
-    utils::match_opts::match_opts,
+    utils::{match_opts::match_opts, Axis},
 };
 
 /// A node in the BVH.
@@ -23,7 +23,7 @@ pub struct BvhNode {
 }
 
 /// Compares two bounding boxes based on existence and then along the given axis
-pub fn box_cmp(a: &Option<BoundingBox>, b: &Option<BoundingBox>, axis_idx: usize) -> Ordering {
+pub fn box_cmp(a: &Option<BoundingBox>, b: &Option<BoundingBox>, axis_idx: Axis) -> Ordering {
     match (a, b) {
         (None, None) => {
             panic!("box_cmp encountered two unbounded objects");
