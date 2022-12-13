@@ -33,7 +33,8 @@ impl Sphere {
     }
 
     /// Returns the uv surface coordinates for a point on the sphere
-    fn surface_coords(&self, point: Vec3A) -> (f32, f32) {
+    #[inline]
+    fn surface_coords(point: Vec3A) -> (f32, f32) {
         let theta = (-point.y).acos();
         let phi = (-point.z).atan2(point.x) + PI;
         let u = phi / TAU;
@@ -75,7 +76,7 @@ impl Hittable for Sphere {
         };
 
         let material = self.material.clone();
-        let (u, v) = self.surface_coords(outward_n);
+        let (u, v) = Sphere::surface_coords(outward_n);
 
         Some(HitRecord {
             point,
@@ -133,15 +134,6 @@ impl MovingSphere {
         let offset = ratio * (self.center1 - self.center0);
         self.center0 + offset
     }
-
-    /// Returns the uv surface coordinates for a point on the sphere
-    fn surface_coords(&self, point: Vec3A) -> (f32, f32) {
-        let theta = (-point.y).acos();
-        let phi = (-point.z).atan2(point.x) + PI;
-        let u = phi / TAU;
-        let v = theta / PI;
-        (u, v)
-    }
 }
 
 impl Hittable for MovingSphere {
@@ -178,7 +170,7 @@ impl Hittable for MovingSphere {
         };
 
         let material = self.material.clone();
-        let (u, v) = self.surface_coords(outward_n);
+        let (u, v) = Sphere::surface_coords(outward_n);
 
         Some(HitRecord {
             point,
