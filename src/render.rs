@@ -52,14 +52,13 @@ impl Renderer {
         // convert buffer indices to viewport coordinates
         let offset_u: f32 = rng.gen();
         let offset_v: f32 = rng.gen();
-        let u: f64 = (x as f32 + offset_u) as f64 / (self.image_width - 1) as f64;
-        let v: f64 =
-            ((self.image_height - y) as f32 + offset_v) as f64 / (self.image_height - 1) as f64;
+        let u = (x as f32 + offset_u) / (self.image_width - 1) as f32;
+        let v = ((self.image_height - y) as f32 + offset_v) / (self.image_height - 1) as f32;
 
         // trace ray
-        let contrib =
-            cam.get_ray(u as f32, v as f32, rng)
-                .shade(world, self.bounce_depth, cam.bg_color, rng);
+        let contrib = cam
+            .get_ray(u, v, rng)
+            .shade(world, self.bounce_depth, cam.bg_color, rng);
         Vec3A::from(contrib)
     }
 
