@@ -86,7 +86,7 @@ impl Material {
                 let mut scatter_dir = rec.normal + rand_unit_v;
 
                 // If the scatter direction is close to zero in all dimensions
-                if scatter_dir.cmplt(Vec3A::splat(EPSILON)).all() {
+                if (rec.point + scatter_dir).cmplt(Vec3A::splat(EPSILON)).all() {
                     scatter_dir = rec.normal;
                 }
 
