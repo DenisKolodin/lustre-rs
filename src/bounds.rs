@@ -72,8 +72,8 @@ impl BoundingBox {
             let t1 = diff1[axis_idx] * inverse_dir;
 
             // these set of comparison allow for corner and parallel intersection checks
-            t_near = t_near.max(t0).min(t_near.max(t1));
-            t_far = t_far.min(t0).max(t_far.min(t1));
+            t_near = f32::min(t_near.max(t0), t_near.max(t1));
+            t_far = f32::max(t_far.min(t0), t_far.min(t1));
         }
 
         t_near <= t_far
