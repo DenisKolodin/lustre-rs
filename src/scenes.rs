@@ -309,10 +309,10 @@ fn gen_cornell_box() -> HittableList {
     });
 
     // yz rect - zero x
-    let left_side = Quad::from_bounds_k(0.0, 555.0, 0.0, 555.0, 555.0, 0, &green_diffuse);
+    let left_side = Quad::from_bounds_k(0.0, 555.0, 0.0, 555.0, 555.0, 0, &red_diffuse);
 
     // yz rect - zero x
-    let right_side = Quad::from_bounds_k(0.0, 555.0, 0.0, 555.0, 0.0, 0, &red_diffuse);
+    let right_side = Quad::from_bounds_k(0.0, 555.0, 0.0, 555.0, 0.0, 0, &green_diffuse);
 
     // xz rect - zero y
     let light_rec = Quad::from_bounds_k(213.0, 343.0, 227.0, 332.0, 554.9, 1, &light);
