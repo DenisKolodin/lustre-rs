@@ -47,3 +47,10 @@ Learning Rust via [Peter Shirley's Ray Tracing in One Weekend](https://raytracin
 
 - [Peter Shirley's "In One Weekend" Blog](https://in1weekend.blogspot.com/), serving as addendums to his aforementioned book series.
 - [Pharr's, Jakob's, and Humphrey's "Physically Based Rendering: From Theory to Implementation"](https://pbr-book.org/): incorporated some of the acceleration structure ideas for the Tree module.
+
+## Examples
+
+Below are some resulting images from lustre:
+
+The Cornell Box:
+![A render of the famous Cornell Box scene, rendered at 10,000 samples at a 2160 by 2160 resolution](images/cornell.png)
