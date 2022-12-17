@@ -52,5 +52,8 @@ Learning Rust via [Peter Shirley's Ray Tracing in One Weekend](https://raytracin
 
 Below are some resulting images from lustre:
 
-The Cornell Box:
+The Cornell Box, rendered at 2k x 2k with 10k samples per pixel:
 ![A render of the famous Cornell Box scene, rendered at 10,000 samples at a 2160 by 2160 resolution](images/cornell.png)
+
+A modified (in the dark with lights!) version of the RT in One Weekend cover photo, rendered at 4k with 5k samples per pixel:
+![A render of a modified RT in One Weekend cover photo, rendered at 5000 samples at a 4k resolution](images/lights.png)
