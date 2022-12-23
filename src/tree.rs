@@ -201,18 +201,18 @@ impl Tree {
                 .min_by(|(_, a_cost), (_, b_cost)| a_cost.total_cmp(b_cost))
                 .unwrap();
 
-            // cost to make a node with all items is the # of items
-            let leaf_cost = num_items as f32;
-
-            // normalize cost
-            let min_cost = 0.5 + min_cost / total_bbox.surface_area();
-
             // Find bin with most items
             let (max_bin_idx, _) = bins
                 .iter()
                 .enumerate()
                 .max_by(|(_, bin1), (_, bin2)| bin1.count.cmp(&bin2.count))
                 .unwrap();
+
+            // cost to make a node with all items is the # of items
+            let leaf_cost = num_items as f32;
+
+            // normalize cost
+            let min_cost = 0.5 + min_cost / total_bbox.surface_area();
 
             // normalize max bin count index
             let max_bin_idx = max_bin_idx.clamp(1, NUM_BINS - 2);
@@ -246,24 +246,6 @@ impl Tree {
                 })
             };
 
-            // let min_cost_cmp = |i| i <= min_bin_idx;
-            // let max_item_cmp = |i| i >= max_bin_idx;
-
-            // let cmp: &dyn Fn(usize) -> bool = if min_cost < leaf_cost {
-            //     &min_cost_cmp
-            // } else {
-            //     &max_item_cmp
-            // };
-
-            // let (left_items, right_items) =
-            //     items.into_iter().partition(|item| match item.centroid {
-            //         Some(centroid) => {
-            //             let off = centroid_bbox.offset(centroid)[axis_idx];
-            //             let bin_idx = comp_bin_idx(off);
-            //             cmp(bin_idx)
-            //         }
-            //         None => true,
-            //     });
 
             let left_idx = self.new_interior(left_items);
             let right_idx = self.new_interior(right_items);
