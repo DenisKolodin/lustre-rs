@@ -351,11 +351,135 @@ impl Tree {
             }
         }
     }
+
+    fn hit_impl_iterative(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+        let ray_dir_inv = ray.direction.recip();
+
+        // priority queue of node ids ordered by their bounding box hit distance
+        let mut nodes_to_check = std::collections::BinaryHeap::new();
+
+        // trackers
+        let mut rec = None;
+        let mut cur_min_hit_dist = t_max;
+
+        // initial bbox hit dist for non-empty queue
+        nodes_to_check.push(QueueElement {
+            bounds_hit_dist: cur_min_hit_dist,
+            idx: self.root,
+        });
+
+        eprintln!(
+            "Checking {ray} against tree of {} node(s)",
+            self.arena.len()
+        );
+
+        // until there are no more nodes in the queue,
+        // destructure each of them immediately
+        while let Some(QueueElement {
+            bounds_hit_dist,
+            idx,
+        }) = nodes_to_check.pop()
+        {
+            eprintln!("Current hit distance: {cur_min_hit_dist}");
+            eprintln!("Looking at node {idx} with bounds hit distance: {bounds_hit_dist}");
+            if bounds_hit_dist > cur_min_hit_dist {
+                eprintln!("bounds was further than current hit distance, continuing");
+                continue;
+            }
+
+            match &self.arena[idx] {
+                TreeNode::Leaf { items, .. } => {
+                    eprintln!(
+                        "Node {idx} is a leaf, intersecting with {} items",
+                        items.len()
+                    );
+                    let hit_result = dbg!(items.hit(ray, t_min, cur_min_hit_dist));
+                    if let Some(HitRecord { t, .. }) = hit_result {
+                        eprintln!("Ray {ray} hit at distance {t}");
+                        cur_min_hit_dist = t;
+                        rec = hit_result;
+                    }
+                }
+                TreeNode::Interior { left, right, .. } => {
+                    eprintln!("Node {idx} is an interior node, checking child bboxes");
+
+                    // LEFT
+                    eprintln!(
+                        "Child node {left} does {}have a bbox",
+                        if self.arena[*left].get_bbox().is_none() {
+                            "not "
+                        } else {
+                            ""
+                        }
+                    );
+
+                    let left_bounds_hit_dist = self.arena[*left]
+                        .get_bbox()
+                        .and_then(|bbox| {
+                            dbg!(bbox.hit_with_inv_ret(ray, ray_dir_inv, t_min, cur_min_hit_dist))
+                        })
+                        // .unwrap_or(cur_min_hit_dist);
+                        .unwrap_or_else(|| {
+                            eprintln!("(left bounds check failed)");
+                            cur_min_hit_dist
+                        });
+
+                    eprintln!("Left chid bounds hit distance: {left_bounds_hit_dist}");
+                    // has to be gtr-eq in case there's no bbox
+                    if left_bounds_hit_dist <= cur_min_hit_dist {
+                        eprint!("Adding left child: ");
+                        nodes_to_check.push(dbg!(QueueElement {
+                            bounds_hit_dist: left_bounds_hit_dist,
+                            idx: *left,
+                        }))
+                    }
+
+                    // RIGHT
+                    eprintln!(
+                        "Child node {right} does {}have a bbox",
+                        if self.arena[*right].get_bbox().is_none() {
+                            "not "
+                        } else {
+                            ""
+                        }
+                    );
+
+                    let right_bounds_hit_dist = self.arena[*right]
+                        .get_bbox()
+                        .and_then(|bbox| {
+                            dbg!(bbox.hit_with_inv_ret(
+                                ray,
+                                ray_dir_inv,
+                                t_min,
+                                left_bounds_hit_dist
+                            ))
+                        })
+                        // .unwrap_or(cur_min_hit_dist);
+                        .unwrap_or_else(|| {
+                            eprintln!("(right bounds check failed)");
+                            cur_min_hit_dist
+                        });
+
+                    eprintln!("Right chid bounds hit distance: {right_bounds_hit_dist}");
+                    if right_bounds_hit_dist <= cur_min_hit_dist {
+                        eprint!("Adding right child: ");
+                        nodes_to_check.push(dbg!(QueueElement {
+                            bounds_hit_dist: right_bounds_hit_dist,
+                            idx: *right,
+                        }))
+                    }
+                }
+            }
+        }
+
+        rec
+    }
 }
 
 impl Hittable for Tree {
     fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         self.hit_impl(self.root, ray, ray.direction.recip(), t_min, t_max)
+        // self.hit_impl_iterative(ray, t_min, t_max)
     }
 
     fn bounding_box(&self, _time0: f32, _time1: f32) -> Option<BoundingBox> {
