@@ -20,7 +20,7 @@
                     "kind": "bin"
                 }
             },
-            "args": ["-o", "target/image.png", "-s", "material-dev", "--seed", "0", "-n", "1'"],
+            "args": ["-o", "target/image.png", "-s", "material-dev", "--seed", "0", "-n", "1"],
             "cwd": "${workspaceFolder}",
             "env": {
                 "RAYON_NUM_THREADS": "1"
