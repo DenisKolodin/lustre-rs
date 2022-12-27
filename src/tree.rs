@@ -85,6 +85,32 @@ impl std::fmt::Display for Bin {
     }
 }
 
+#[derive(Debug, Clone, Copy, Default, PartialEq)]
+struct QueueElement {
+    /// the hit distance to the bounds (used as the key)
+    bounds_hit_dist: f32,
+    /// the node index (used as the value)
+    idx: usize,
+}
+
+/// floating point numbers don't have a full equivalence relation,
+/// but what if we pretend that it does? Chaos :3
+impl std::cmp::Eq for QueueElement {}
+
+impl std::cmp::PartialOrd for QueueElement {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        // swap ordering direction for min-heap
+        other.bounds_hit_dist.partial_cmp(&self.bounds_hit_dist)
+    }
+}
+
+impl std::cmp::Ord for QueueElement {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        // swap ordering direction for min-heap
+        other.bounds_hit_dist.total_cmp(&self.bounds_hit_dist)
+    }
+}
+
 impl Tree {
     /// Adds a new leaf node to the Tree, returning the index for use in creation and intersection
     #[inline]
