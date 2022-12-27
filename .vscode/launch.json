@@ -12,15 +12,19 @@
                 "args": [
                     "build",
                     "--bin=lustre",
-                    "--package=lustre"
+                    "--package=lustre",
+                    "--no-default-features"
                 ],
                 "filter": {
                     "name": "lustre",
                     "kind": "bin"
                 }
             },
-            "args": ["-o", "target/image.png", "-s", "material-dev"],
-            "cwd": "${workspaceFolder}"
+            "args": ["-o", "target/image.png", "-s", "material-dev", "--seed", "0", "-n", "1'"],
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "RAYON_NUM_THREADS": "1"
+            }
         },
         {
             "type": "lldb",
