@@ -20,7 +20,10 @@ pub struct Ray {
 
 impl std::fmt::Display for Ray {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_fmt(format_args!("({} -> {})@{}", self.origin, self.direction, self.time))
+        f.write_fmt(format_args!(
+            "({} -> {})@{}",
+            self.origin, self.direction, self.time
+        ))
     }
 }
 
