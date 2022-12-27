@@ -79,6 +79,38 @@ impl BoundingBox {
         t_near <= t_far
     }
 
+    /// [hit_with_inv], but returns the hit distance
+    pub fn hit_with_inv_ret(
+        &self,
+        ray: &Ray,
+        ray_dir_inv: Vec3A,
+        t_min: f32,
+        t_max: f32,
+    ) -> Option<f32> {
+        let diff0 = self.min - ray.origin;
+        let diff1 = self.max - ray.origin;
+
+        let mut t_near = t_min;
+        let mut t_far = t_max;
+
+        // Check for slab intersection in each dimension
+        for axis_idx in Axis::AXES {
+            let inverse_dir = ray_dir_inv[axis_idx];
+            let t0 = diff0[axis_idx] * inverse_dir;
+            let t1 = diff1[axis_idx] * inverse_dir;
+
+            // these set of comparison allow for corner and parallel intersection checks
+            t_near = f32::min(t_near.max(t0), t_near.max(t1));
+            t_far = f32::max(t_far.min(t0), t_far.min(t1));
+        }
+
+        if t_near <= t_far {
+            Some(t_far)
+        } else {
+            None
+        }
+    }
+
     /// Returns a bounding box enclosing this and the other box.
     ///
     /// In other words, combines the two boxes by taking:
