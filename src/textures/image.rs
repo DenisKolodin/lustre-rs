@@ -19,11 +19,14 @@ impl ImageMap {
     /// Missing texture sourced from [The GMod fandom wiki](https://gmod.fandom.com/wiki/Missing_textures),
     /// available under CC-BY-SA
     pub fn new(file_path: std::path::PathBuf) -> Self {
-        match image::open(file_path) {
+        match image::open(&file_path) {
             Ok(img) => Self {
                 image: img.to_rgb8(),
             },
-            Err(_) => Self::default(),
+            Err(why) => {
+                eprintln!("Failed to open {file_path:?}: {why}");
+                Self::default()
+            }
         }
     }
 }
