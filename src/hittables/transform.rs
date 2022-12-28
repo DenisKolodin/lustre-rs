@@ -72,9 +72,15 @@ impl Transform {
         self
     }
 
-    /// Adds a rotation based on the axis and angle to the existing affine transform
-    pub fn with_axis_angle(&mut self, axis: Vec3, angle: f32) -> &mut Self {
-        self.matrix = Affine3A::from_axis_angle(axis, angle) * self.matrix;
+    /// Adds a rotation based on the axis and angle (in radians) to the existing affine transform
+    pub fn with_axis_angle_radians(&mut self, axis: Vec3, radians: f32) -> &mut Self {
+        self.matrix = Affine3A::from_axis_angle(axis, radians) * self.matrix;
+        self
+    }
+
+    /// Adds a rotation based on the axis and angle (in degrees) to the existing affine transform
+    pub fn with_axis_angle_degrees(&mut self, axis: Vec3, degrees: f32) -> &mut Self {
+        self.matrix = Affine3A::from_axis_angle(axis, degrees.to_radians()) * self.matrix;
         self
     }
 

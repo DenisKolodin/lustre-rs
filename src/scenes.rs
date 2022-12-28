@@ -329,14 +329,14 @@ fn gen_cornell_box() -> HittableList {
     let squarish_box: Arc<dyn Hittable> =
         QuadBox::new(Vec3A::ZERO, Vec3A::splat(165.0), &white_diffuse).wrap();
     let squarish_box = Transform::new(&squarish_box)
-        .with_axis_angle(glam::Vec3::Y, -18.0f32.to_radians())
+        .with_axis_angle_degrees(glam::Vec3::Y, -18.0)
         .with_translation(glam::Vec3::new(130.0, 0.0, 65.0))
         .finalize();
 
     let tall_box: Arc<dyn Hittable> =
         QuadBox::new(Vec3A::ZERO, Vec3A::new(165.0, 330.0, 165.0), &white_diffuse).wrap();
     let tall_box = Transform::new(&tall_box)
-        .with_axis_angle(glam::Vec3::Y, 15.0f32.to_radians())
+        .with_axis_angle_degrees(glam::Vec3::Y, 15.0)
         .with_translation(glam::Vec3::new(265.0, 0.0, 295.0))
         .finalize();
 
@@ -764,10 +764,9 @@ fn gen_book2_scene(rng: &mut impl Rng) -> HittableList {
     let perlin_mat = Arc::new(Material::Lambertian {
         albedo: Arc::new(NoiseTexture::new(::noise::Perlin::default(), 0.1)),
     });
-
-    // group of white spheres
     all_objects.push(Sphere::new(Vec3A::new(220.0, 280.0, 300.0), 90.0, &perlin_mat).wrap());
 
+    // group of white spheres
     let whiteish_diffuse = Arc::new(Material::Lambertian {
         albedo: Arc::new(SolidColor::new(Vec3A::splat(0.73))),
     });
@@ -780,7 +779,7 @@ fn gen_book2_scene(rng: &mut impl Rng) -> HittableList {
     let wrapped_spheres: Arc<dyn Hittable> = Tree::new(rand_sphere_group, 0.0, 1.0).wrap();
     all_objects.push(
         Transform::new(&wrapped_spheres)
-            .with_axis_angle(glam::Vec3::Y, 15.0)
+            .with_axis_angle_degrees(glam::Vec3::Y, 15.0)
             .with_translation(glam::Vec3::new(-100.0, 270.0, 395.0))
             .finalize()
             .wrap(),
