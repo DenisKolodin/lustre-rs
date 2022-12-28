@@ -686,21 +686,19 @@ fn gen_book2_scene(rng: &mut impl Rng) -> HittableList {
     // BVH-ify the ground boxes
     let mut all_objects: HittableList = vec![Tree::new(ground_boxes, 0.0, 1.0).wrap()];
 
+    // light
     let light_mat = Arc::new(Material::DiffuseLight {
         albedo: Arc::new(SolidColor::new(Vec3A::ONE)),
         brightness: 7.0,
     });
-
-    // light
     all_objects.push(Quad::from_bounds_k(123.0, 423.0, 147.0, 412.0, 554.0, 1, &light_mat).wrap());
 
+    // horizontally moving sphere
     let center1 = Vec3A::new(400.0, 400.0, 200.0);
     let center2 = center1 + Vec3A::X * 30.0;
     let moving_sphere_mat = Arc::new(Material::Lambertian {
         albedo: Arc::new(SolidColor::new(Vec3A::new(0.7, 0.3, 0.1))),
     });
-
-    // horizontally moving sphere
     all_objects
         .push(MovingSphere::new(center1, center2, 0.0, 1.0, 50.0, &moving_sphere_mat).wrap());
 
@@ -757,12 +755,11 @@ fn gen_book2_scene(rng: &mut impl Rng) -> HittableList {
     let earth_mat = Arc::new(Material::Lambertian {
         albedo: Arc::new(ImageMap::new(PathBuf::from("resources/earthmap.jpg"))),
     });
-
     all_objects.push(Sphere::new(Vec3A::new(400.0, 200.0, 400.0), 100.0, &earth_mat).wrap());
 
     // perlin noise sphere
     let perlin_mat = Arc::new(Material::Lambertian {
-        albedo: Arc::new(NoiseTexture::new(::noise::Perlin::default(), 0.1)),
+        albedo: Arc::new(NoiseTexture::new(::noise::Perlin::default(), 0.01)),
     });
     all_objects.push(Sphere::new(Vec3A::new(220.0, 280.0, 300.0), 90.0, &perlin_mat).wrap());
 
