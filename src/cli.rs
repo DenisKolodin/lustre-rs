@@ -19,6 +19,16 @@ pub struct Arguments {
     )]
     pub output: std::path::PathBuf,
 
+    /// The width of the generated image
+    #[clap(
+        short,
+        long,
+        value_parser = valid_count::<u32>,
+        default_value_t = 1200,
+        value_name = "NUM"
+    )]
+    pub image_width: u32,
+
     /// samples per pixel
     ///
     /// A higher count of samples leads to higher visual fidelity due to more rays sent for a pixel

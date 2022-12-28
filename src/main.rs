@@ -23,9 +23,6 @@ fn main() {
     // Parsing cli args
     let cli_args = Arguments::parse();
 
-    // Set up image properties
-    let img_w = 1200;
-
     // set up enviroment
     let mut rng = if cfg!(debug_assertions) {
         // if debugging, use deterministic seed
@@ -39,7 +36,8 @@ fn main() {
     };
 
     // Get scene
-    let (cam, world, dimensions) = scenes::get_scene(img_w, cli_args.scene, &mut rng);
+    let (cam, world, dimensions) =
+        scenes::get_scene(cli_args.image_width, cli_args.scene, &mut rng);
     let world = Tree::new(world, 0.0, 1.0);
 
     let renderer = render::Renderer::new(
