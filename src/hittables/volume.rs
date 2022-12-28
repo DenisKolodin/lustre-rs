@@ -14,7 +14,7 @@ use crate::{
 pub struct ConstantMedium {
     boundary: Arc<dyn Hittable>,
     material: Arc<Material>,
-    density: f32,
+    neg_inv_density: f32,
 }
 
 impl ConstantMedium {
@@ -24,15 +24,13 @@ impl ConstantMedium {
             material: Arc::new(Material::Isotropic {
                 albedo: Arc::clone(material),
             }),
-            density,
+            neg_inv_density: density.recip().neg(),
         }
     }
 }
 
 impl Hittable for ConstantMedium {
     fn hit(&self, ray: &crate::ray::Ray, t_min: f32, t_max: f32) -> Option<super::HitRecord> {
-        let neg_inv_d = self.density.recip().neg();
-
         let mut min_rec = match self.boundary.hit(ray, -INFINITY, INFINITY) {
             Some(rec) => rec,
             None => return None,
@@ -54,7 +52,7 @@ impl Hittable for ConstantMedium {
 
         let ray_dir_length = ray.direction.length();
         let dist_inside_boundary = (max_rec.t - min_rec.t) * ray_dir_length;
-        let hit_dist = neg_inv_d * (1.0 - rand::thread_rng().gen::<f32>()).log10();
+        let hit_dist = self.neg_inv_density * (1.0 - rand::thread_rng().gen::<f32>()).log10();
         if hit_dist > dist_inside_boundary {
             return None;
         }
