@@ -21,8 +21,8 @@ pub struct Arguments {
 
     /// The width of the generated image
     #[clap(
-        short,
-        long,
+        short = 'w',
+        long = "width",
         value_parser = valid_count::<u32>,
         default_value_t = 1200,
         value_name = "NUM"
