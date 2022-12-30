@@ -32,8 +32,10 @@ pub enum SceneType {
     RandomLights,
     /// The Final Scene from Ray Tracing in One Weekend: The Next Week
     FinalScene,
-    /// Debug Scene
-    Debug,
+    /// Debugging Cornell Box Scene
+    DebugCornell,
+    /// Debugging Final Scene from Book 2
+    DebugFinal,
 }
 
 /// Returns a [Camera], a list of objects ([HittableList]), and the image dimensions as a tuple.
@@ -109,13 +111,23 @@ pub fn get_scene(
             vert_fov = 40.0;
             gen_book2_scene(rng)
         }
-        SceneType::Debug => {
+        SceneType::DebugCornell => {
             aspect_ratio = 1.0;
             bg_color = Color::new(Vec3A::ZERO);
             look_from = Vec3A::new(278.0, 278.0, -800.0);
             look_at = Vec3A::new(278.0, 278.0, 0.0);
             vert_fov = 40.0;
             gen_debug_scene()
+        }
+        SceneType::DebugFinal => {
+            aspect_ratio = 1.0;
+            bg_color = Color::new(Vec3A::ZERO);
+            look_from = Vec3A::new(478.0, 278.0, -600.0);
+            // pointing at the group of random white spheres
+            look_at = Vec3A::new(1.0, 353.0, 453.0);
+            // narrower field of view to "zoom-in" to the spheres
+            vert_fov = 20.0;
+            gen_debug2_scene(rng)
         }
     };
 
@@ -781,6 +793,51 @@ fn gen_book2_scene(rng: &mut impl Rng) -> HittableList {
             .finalize()
             .wrap(),
     );
+
+    all_objects
+}
+
+// Like [gen_book2_scene], but only the light and random white sphere group
+fn gen_debug2_scene(rng: &mut impl Rng) -> HittableList {
+    let mut all_objects: Vec<Arc<dyn Hittable>> = vec![];
+    // light
+    let light_mat = Arc::new(Material::DiffuseLight {
+        albedo: Arc::new(SolidColor::new(Vec3A::ONE)),
+        brightness: 7.0,
+    });
+    all_objects.push(Quad::from_bounds_k(123.0, 423.0, 147.0, 412.0, 554.0, 1, &light_mat).wrap());
+
+    // group of white spheres
+    let whiteish_diffuse = Arc::new(Material::Lambertian {
+        albedo: Arc::new(SolidColor::new(Vec3A::splat(0.73))),
+    });
+    let rand_sphere_group: HittableList = std::iter::repeat_with(|| -> Arc<dyn Hittable> {
+        Sphere::new(rng.gen::<Vec3A>() * 165.0, 10.0, &whiteish_diffuse).wrap()
+    })
+    .take(1000)
+    .collect();
+
+    let wrapped_spheres: Arc<dyn Hittable> = Tree::new(rand_sphere_group, 0.0, 1.0).wrap();
+
+    // eprintln!(
+    //     "centroid of wrapped spheres: {}",
+    //     wrapped_spheres.bounding_box(0.0, 1.0).unwrap().centroid()
+    // );
+
+    let transformed_spheres = Transform::new(&wrapped_spheres)
+        .with_axis_angle_degrees(glam::Vec3::Y, 15.0)
+        .with_translation(glam::Vec3::new(-100.0, 270.0, 395.0))
+        .finalize();
+
+    // eprintln!(
+    //     "centroid of transformed spheres: {}",
+    //     transformed_spheres
+    //         .bounding_box(0.0, 1.0)
+    //         .unwrap()
+    //         .centroid()
+    // );
+
+    all_objects.push(transformed_spheres.wrap());
 
     all_objects
 }
