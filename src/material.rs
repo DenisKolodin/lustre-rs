@@ -1,6 +1,6 @@
 //! Implementation of material types
 
-use std::{f32::EPSILON, sync::Arc};
+use std::sync::Arc;
 
 use glam::Vec3A;
 use rand::Rng;
@@ -86,7 +86,10 @@ impl Material {
                 let mut scatter_dir = rec.normal + rand_unit_v;
 
                 // If the scatter direction is close to zero in all dimensions
-                if (rec.point + scatter_dir).cmplt(Vec3A::splat(EPSILON)).all() {
+                if (rec.point + scatter_dir)
+                    .cmplt(Vec3A::splat(f32::EPSILON))
+                    .all()
+                {
                     scatter_dir = rec.normal;
                 }
 
