@@ -43,9 +43,11 @@ pub struct HitRecord {
 impl HitRecord {
     pub fn set_face_normal(&mut self, ray: &Ray, outward_n: Vec3A) {
         if ray.direction.dot(outward_n) < 0.0 {
+            // ray outside sphere
             self.front_face = true;
             self.normal = outward_n;
         } else {
+            // ray inside sphere
             self.front_face = false;
             self.normal = -outward_n;
         }
@@ -60,7 +62,7 @@ impl PartialOrd for HitRecord {
 
 impl PartialEq for HitRecord {
     fn eq(&self, other: &Self) -> bool {
-        self.t == other.t
+        self.t.eq(&other.t)
     }
 }
 
