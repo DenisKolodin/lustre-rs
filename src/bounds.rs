@@ -163,4 +163,13 @@ mod tests {
             "The union of the default bbox with another bbox should be equal to the other bbox"
         )
     }
+
+    #[test]
+    fn extreme_union() {
+        let neg = BoundingBox::new(Vec3A::splat(f32::MIN), Vec3A::splat(-f32::MIN_POSITIVE));
+        let pos = BoundingBox::new(Vec3A::splat(f32::MIN_POSITIVE), Vec3A::splat(f32::MAX));
+        let expected = BoundingBox::new(Vec3A::splat(f32::MIN), Vec3A::splat(f32::MAX));
+
+        assert_eq!(neg.union(pos), expected)
+    }
 }
