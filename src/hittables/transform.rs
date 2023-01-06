@@ -11,7 +11,8 @@ use crate::{
 
 /// A hittable undergoes a transform before and after being hit.
 pub struct Transform {
-    matrix: Affine3A,
+    transform: Affine3A,
+    inv_transform: Affine3A,
     object: Arc<dyn Hittable>,
 }
 
@@ -21,32 +22,40 @@ impl Transform {
 
     /// Creates an affine transform that does not transform the underlying object
     pub fn new(o: &Arc<dyn Hittable>) -> Self {
+        let transform = Affine3A::IDENTITY;
         Self {
-            matrix: Affine3A::IDENTITY,
+            transform,
+            inv_transform: transform.inverse(),
             object: Arc::clone(o),
         }
     }
 
     /// Creates an affine transform that changes the size of the object.
     pub fn from_scale_factor(scale: Vec3, o: &Arc<dyn Hittable>) -> Self {
+        let transform = Affine3A::from_scale(scale);
         Self {
-            matrix: Affine3A::from_scale(scale),
+            transform,
+            inv_transform: transform.inverse(),
             object: Arc::clone(o),
         }
     }
 
     /// Creates an affine transform containing a 3D rotation around an `axis`, of `angle` (in radians).
     pub fn from_axis_angle(axis: Vec3, angle: f32, o: &Arc<dyn Hittable>) -> Self {
+        let transform = Affine3A::from_axis_angle(axis, angle);
         Self {
-            matrix: Affine3A::from_axis_angle(axis, angle),
+            transform,
+            inv_transform: transform.inverse(),
             object: Arc::clone(o),
         }
     }
 
     /// Creates an affine transform from the given 3D `translation`.
     pub fn from_translation(translation: Vec3, o: &Arc<dyn Hittable>) -> Self {
+        let transform = Affine3A::from_translation(translation);
         Self {
-            matrix: Affine3A::from_translation(translation),
+            transform,
+            inv_transform: transform.inverse(),
             object: Arc::clone(o),
         }
     }
@@ -58,8 +67,10 @@ impl Transform {
         up_dir: Vec3,
         o: &Arc<dyn Hittable>,
     ) -> Self {
+        let transform = Affine3A::look_at_rh(camera_pos, focal_point, up_dir);
         Self {
-            matrix: Affine3A::look_at_rh(camera_pos, focal_point, up_dir),
+            transform,
+            inv_transform: transform.inverse(),
             object: Arc::clone(o),
         }
     }
@@ -68,31 +79,32 @@ impl Transform {
 
     /// Adds a scaling factor to the existing affine transform
     pub fn with_scale_factor(&mut self, scale: Vec3) -> &mut Self {
-        self.matrix = Affine3A::from_scale(scale) * self.matrix;
+        self.transform = Affine3A::from_scale(scale) * self.transform;
         self
     }
 
     /// Adds a rotation based on the axis and angle (in radians) to the existing affine transform
     pub fn with_axis_angle_radians(&mut self, axis: Vec3, radians: f32) -> &mut Self {
-        self.matrix = Affine3A::from_axis_angle(axis, radians) * self.matrix;
+        self.transform = Affine3A::from_axis_angle(axis, radians) * self.transform;
         self
     }
 
     /// Adds a rotation based on the axis and angle (in degrees) to the existing affine transform
     pub fn with_axis_angle_degrees(&mut self, axis: Vec3, degrees: f32) -> &mut Self {
-        self.matrix = Affine3A::from_axis_angle(axis, degrees.to_radians()) * self.matrix;
+        self.transform = Affine3A::from_axis_angle(axis, degrees.to_radians()) * self.transform;
         self
     }
 
     /// Adds a translation to the existing affine transform
     pub fn with_translation(&mut self, translation: Vec3) -> &mut Self {
-        self.matrix = Affine3A::from_translation(translation) * self.matrix;
+        self.transform = Affine3A::from_translation(translation) * self.transform;
         self
     }
 
     pub fn finalize(&mut self) -> Self {
         Self {
-            matrix: self.matrix,
+            transform: self.transform,
+            inv_transform: self.transform.inverse(),
             object: self.object.to_owned(),
         }
     }
@@ -101,16 +113,16 @@ impl Transform {
 impl Hittable for Transform {
     fn hit(&self, ray: &crate::ray::Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         let transformed_ray = crate::ray::Ray::new(
-            self.matrix.inverse().transform_point3a(ray.origin),
-            self.matrix.inverse().transform_vector3a(ray.direction),
+            self.inv_transform.transform_point3a(ray.origin),
+            self.inv_transform.transform_vector3a(ray.direction),
             ray.time,
         );
 
         match self.object.hit(&transformed_ray, t_min, t_max) {
             Some(rec) => {
                 let mut transformed_rec = HitRecord {
-                    point: self.matrix.transform_point3a(rec.point),
-                    normal: self.matrix.transform_vector3a(rec.normal),
+                    point: self.transform.transform_point3a(rec.point),
+                    normal: self.transform.transform_vector3a(rec.normal),
                     ..rec
                 };
                 transformed_rec.set_face_normal(&transformed_ray, rec.normal);
@@ -124,8 +136,8 @@ impl Hittable for Transform {
         self.object
             .bounding_box(time0, time1)
             .map(|BoundingBox { min, max }| {
-                let new_min = self.matrix.transform_point3a(min);
-                let new_max = self.matrix.transform_point3a(max);
+                let new_min = self.transform.transform_point3a(min);
+                let new_max = self.transform.transform_point3a(max);
                 BoundingBox::new(new_min, new_max)
             })
     }
