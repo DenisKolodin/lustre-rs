@@ -5,7 +5,6 @@
 pub mod arena;
 pub mod match_opts;
 pub mod progress;
-pub mod random;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Axis {

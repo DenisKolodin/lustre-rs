@@ -12,6 +12,7 @@ mod cli;
 mod color;
 mod hittables;
 mod material;
+mod random;
 mod ray;
 mod render;
 mod scenes;

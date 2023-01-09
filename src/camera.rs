@@ -10,7 +10,7 @@ use std::ops::Range;
 use glam::Vec3A;
 use rand::Rng;
 
-use crate::{color::Color, ray::Ray, utils::random::rand_vec3_in_unit_disk};
+use crate::{color::Color, random::rand_vec3_in_unit_disk, ray::Ray};
 
 /// A Camera that generates rays
 #[derive(Debug)]
