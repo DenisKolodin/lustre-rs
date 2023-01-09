@@ -2,6 +2,7 @@ use rand::SeedableRng;
 
 use crate::{
     cli::{Arguments, Parser},
+    random::LustreRng,
     tree::Tree,
 };
 
@@ -27,13 +28,13 @@ fn main() {
     // set up enviroment
     let mut rng = if let Some(seed) = cli_args.seed {
         // use user-provided seed if available
-        rand::rngs::SmallRng::seed_from_u64(seed)
+        LustreRng::seed_from_u64(seed)
     } else if cfg!(debug_assertions) {
         // if debugging, use deterministic seed
-        rand::rngs::SmallRng::seed_from_u64(0)
+        LustreRng::seed_from_u64(0)
     } else {
         // otherwise real psuedo-randomness
-        rand::rngs::SmallRng::from_entropy()
+        LustreRng::from_entropy()
     };
 
     // Get scene

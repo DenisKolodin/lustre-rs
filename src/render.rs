@@ -1,7 +1,9 @@
 //! Render an image given a [Camera] and a [Hittable].
 
+use crate::random::LustreRng;
+
 use glam::Vec3A;
-use rand::{rngs::SmallRng, Rng, SeedableRng};
+use rand::{Rng, SeedableRng};
 
 #[cfg(feature = "parallel")]
 use {indicatif::ParallelProgressIterator, rayon::prelude::*};
@@ -86,7 +88,7 @@ impl Renderer {
                     .into_par_iter()
                     .map_init(
                         // from_rng(...) gives Result, can assume it won't fail
-                        || SmallRng::from_rng(&mut rand::thread_rng()).unwrap(),
+                        || LustreRng::from_rng(&mut rand::thread_rng()).unwrap(),
                         // current sample # doesn't matter, ignore
                         |rng, _| self.compute_pixel_v(&cam, &world, x, y, rng),
                     )
@@ -111,7 +113,7 @@ impl Renderer {
                     .map(
                         // current sample # doesn't matter, ignore
                         |_| {
-                            let rng = &mut SmallRng::from_rng(&mut rand::thread_rng()).unwrap();
+                            let rng = &mut LustreRng::from_rng(&mut rand::thread_rng()).unwrap();
                             self.compute_pixel_v(&cam, &world, x, y, rng)
                         },
                     )

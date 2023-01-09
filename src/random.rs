@@ -6,6 +6,9 @@ use glam::Vec3A;
 use rand::Rng;
 use rand_distr::{Distribution, UnitDisc, UnitSphere};
 
+// re-export here for ease of modification
+pub use rand::rngs::SmallRng as LustreRng;
+
 /// Generates a random [Vec3A] within the unit sphere (radius 1).
 ///
 /// wrapper function around [UnitSphere]'s `sample` method
