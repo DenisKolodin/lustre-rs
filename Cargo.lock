@@ -333,6 +333,7 @@ dependencies = [
  "noise",
  "num-traits",
  "rand 0.8.5",
+ "rand-wyrand",
  "rand_distr",
  "rayon",
 ]
@@ -512,6 +513,15 @@ checksum = "34af8d1a0e25924bc5b7c43c079c942339d8f0a8b57c39049bef581b46327404"
 dependencies = [
  "libc",
  "rand_chacha 0.3.1",
+ "rand_core 0.6.4",
+]
+
+[[package]]
+name = "rand-wyrand"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9a2fb2bf4c63a7fc195b8a4d9b0d632f18c5f6b630f7be3e8cdd92f1d7c52e77"
+dependencies = [
  "rand_core 0.6.4",
 ]
 

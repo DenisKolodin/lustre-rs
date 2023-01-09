@@ -7,7 +7,11 @@ use rand::Rng;
 use rand_distr::{Distribution, UnitDisc, UnitSphere};
 
 // re-export here for ease of modification
-pub use rand::rngs::SmallRng as LustreRng;
+pub use {
+    // rand::rngs::SmallRng as LustreRng,
+    // rand::rngs::StdRng as LustreRng,
+    rand_wyrand::WyRand as LustreRng,
+};
 
 /// Generates a random [Vec3A] within the unit sphere (radius 1).
 ///
