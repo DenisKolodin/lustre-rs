@@ -109,6 +109,9 @@ pub fn get_scene(
             look_from = Vec3A::new(478.0, 278.0, -600.0);
             look_at = Vec3A::new(278.0, 278.0, 0.0);
             vert_fov = 40.0;
+            focus_dist = look_from.distance(look_at);
+            // TODO this is patch, what is the real bug?
+            aperture = focus_dist.recip();
             gen_book2_scene(rng)
         }
         SceneType::DebugCornell => {
@@ -127,6 +130,8 @@ pub fn get_scene(
             look_at = Vec3A::new(1.0, 353.0, 453.0);
             // narrower field of view to "zoom-in" to the spheres
             vert_fov = 20.0;
+            focus_dist = look_from.distance(look_at);
+            aperture = focus_dist.recip();
             gen_debug2_scene(rng)
         }
     };
