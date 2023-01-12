@@ -776,7 +776,7 @@ fn gen_book2_scene(rng: &mut impl Rng) -> HittableList {
 
     // perlin noise sphere
     let perlin_mat = Arc::new(Material::Lambertian {
-        albedo: Arc::new(NoiseTexture::new(::noise::Perlin::default(), 0.01)),
+        albedo: Arc::new(NoiseTexture::new(::noise::Perlin::default(), 0.5)),
     });
     all_objects.push(Sphere::new(Vec3A::new(220.0, 280.0, 300.0), 90.0, &perlin_mat).wrap());
 
