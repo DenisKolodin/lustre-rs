@@ -99,6 +99,7 @@ impl BoundingBox {
     }
 
     pub fn diagonal(&self) -> Vec3A {
+        debug_assert!(self.min.cmplt(self.max).all());
         self.max - self.min
     }
 
@@ -128,7 +129,7 @@ impl BoundingBox {
     }
 
     pub fn centroid(&self) -> Vec3A {
-        0.5 * (self.min + self.max)
+        0.5 * self.min + 0.5 * self.max
     }
 
     pub fn overlaps(&self, other: &Self) -> bool {
