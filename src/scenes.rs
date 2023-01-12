@@ -64,12 +64,12 @@ pub fn get_scene(
             look_at = -Vec3A::Z;
             focus_dist = 1.0;
             vert_fov = 90.0;
-            get_mat_dev_scene()
+            gen_mat_dev()
         }
         SceneType::CoverPhoto => {
             aperture = 0.1;
             aspect_ratio = 3.0 / 2.0;
-            gen_random_scene(rng)
+            gen_random_spheres(rng)
         }
 
         SceneType::TwoSpheres => gen_two_spheres(),
@@ -101,7 +101,7 @@ pub fn get_scene(
             aperture = 0.1;
             aspect_ratio = 3.0 / 2.0;
             bg_color = Color::new(Vec3A::from(bg_color) / 10.0);
-            gen_emissive_random(rng)
+            gen_emissive_random_spheres(rng)
         }
         SceneType::FinalScene => {
             aspect_ratio = 1.0;
@@ -112,7 +112,7 @@ pub fn get_scene(
             focus_dist = look_from.distance(look_at);
             // TODO this is patch, what is the real bug?
             aperture = focus_dist.recip();
-            gen_book2_scene(rng)
+            gen_book2(rng)
         }
         SceneType::DebugCornell => {
             aspect_ratio = 1.0;
@@ -120,7 +120,7 @@ pub fn get_scene(
             look_from = Vec3A::new(278.0, 278.0, -800.0);
             look_at = Vec3A::new(278.0, 278.0, 0.0);
             vert_fov = 40.0;
-            gen_debug_scene()
+            gen_debug_cornell()
         }
         SceneType::DebugFinal => {
             aspect_ratio = 1.0;
@@ -132,7 +132,7 @@ pub fn get_scene(
             vert_fov = 20.0;
             focus_dist = look_from.distance(look_at);
             aperture = focus_dist.recip();
-            gen_debug2_scene(rng)
+            gen_debug_book2(rng)
         }
     };
 
@@ -156,7 +156,7 @@ pub fn get_scene(
 }
 
 /// Returns a [HittableList] containing a few spheres with unique materials
-fn get_mat_dev_scene() -> HittableList {
+fn gen_mat_dev() -> HittableList {
     //  Create ground sphere
     let ground_material = Arc::new(Material::Lambertian {
         albedo: Arc::new(SolidColor::new(Vec3A::new(0.8, 0.2, 0.2))),
@@ -185,7 +185,7 @@ fn get_mat_dev_scene() -> HittableList {
 }
 
 /// Returns a [HittableList] containing randomly-generated spheres
-fn gen_random_scene(rng: &mut impl Rng) -> HittableList {
+fn gen_random_spheres(rng: &mut impl Rng) -> HittableList {
     //  Create ground sphere
     let ground_material = Arc::new(Material::Lambertian {
         albedo: Arc::new(SolidColor::new(Vec3A::ONE / 2.0)),
@@ -577,7 +577,7 @@ fn box_helper() -> HittableList {
     ]
 }
 
-fn gen_debug_scene() -> HittableList {
+fn gen_debug_cornell() -> HittableList {
     let mut world_box = box_helper();
     let white_diffuse = Arc::new(Material::Lambertian {
         albedo: Arc::new(SolidColor::new(Vec3A::splat(0.73))),
@@ -591,7 +591,7 @@ fn gen_debug_scene() -> HittableList {
 }
 
 /// Returns a [HittableList] containing randomly-generated spheres, some emissive
-fn gen_emissive_random(rng: &mut impl Rng) -> HittableList {
+fn gen_emissive_random_spheres(rng: &mut impl Rng) -> HittableList {
     // the set of objects with estimated capacity
     let mut world: HittableList = Vec::with_capacity(4 + (-11..11).len().pow(2));
 
@@ -667,7 +667,7 @@ fn gen_emissive_random(rng: &mut impl Rng) -> HittableList {
 }
 
 /// The scene defined at the end of the second book for Ray Tracing in One Weekend
-fn gen_book2_scene(rng: &mut impl Rng) -> HittableList {
+fn gen_book2(rng: &mut impl Rng) -> HittableList {
     let mut ground_boxes: HittableList = vec![];
     let ground_mat = Arc::new(Material::Lambertian {
         albedo: Arc::new(SolidColor::new(Vec3A::new(0.48, 0.83, 0.53))),
@@ -803,7 +803,7 @@ fn gen_book2_scene(rng: &mut impl Rng) -> HittableList {
 }
 
 // Like [gen_book2_scene], but only the light and random white sphere group
-fn gen_debug2_scene(rng: &mut impl Rng) -> HittableList {
+fn gen_debug_book2(rng: &mut impl Rng) -> HittableList {
     let mut all_objects: Vec<Arc<dyn Hittable>> = vec![];
     // light
     let light_mat = Arc::new(Material::DiffuseLight {
