@@ -31,15 +31,8 @@ impl ConstantMedium {
 
 impl Hittable for ConstantMedium {
     fn hit(&self, ray: &crate::ray::Ray, t_min: f32, t_max: f32) -> Option<super::HitRecord> {
-        let mut min_rec = match self.boundary.hit(ray, -INFINITY, INFINITY) {
-            Some(rec) => rec,
-            None => return None,
-        };
-
-        let mut max_rec = match self.boundary.hit(ray, min_rec.t + 0.0001, INFINITY) {
-            Some(rec) => rec,
-            None => return None,
-        };
+        let Some(mut min_rec) = self.boundary.hit(ray, -INFINITY, INFINITY) else { return None };
+        let Some(mut max_rec) = self.boundary.hit(ray, min_rec.t + 0.0001, INFINITY) else { return None };
 
         min_rec.t = min_rec.t.max(t_min);
         max_rec.t = max_rec.t.min(t_max);
@@ -115,15 +108,8 @@ where
     N: ::noise::NoiseFn<f64, 3> + Send + Sync,
 {
     fn hit(&self, ray: &crate::ray::Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
-        let mut min_rec = match self.boundary.hit(ray, -INFINITY, INFINITY) {
-            Some(rec) => rec,
-            None => return None,
-        };
-
-        let mut max_rec = match self.boundary.hit(ray, min_rec.t + 0.0001, INFINITY) {
-            Some(rec) => rec,
-            None => return None,
-        };
+        let Some(mut min_rec) = self.boundary.hit(ray, -INFINITY, INFINITY) else { return None };
+        let Some(mut max_rec) = self.boundary.hit(ray, min_rec.t + 0.0001, INFINITY) else { return None };
 
         min_rec.t = min_rec.t.max(t_min);
         max_rec.t = max_rec.t.min(t_max);
