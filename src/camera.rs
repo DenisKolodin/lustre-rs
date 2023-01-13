@@ -33,9 +33,11 @@ pub struct Camera {
     /// Radius of the approximated camera lens
     lens_radius: f32,
     /// Range of time in which shutter is open,
-    shutter_time: Range<f32>,
+    pub shutter_time: Range<f32>,
     /// Background color
     pub bg_color: Color,
+    /// Aspect ratio
+    pub aspect_ratio: f32,
 }
 
 impl Camera {
@@ -87,6 +89,7 @@ impl Camera {
             lens_radius,
             shutter_time,
             bg_color,
+            aspect_ratio,
         }
     }
 
@@ -110,9 +113,9 @@ impl Default for Camera {
             Vec3A::ZERO,
             -Vec3A::Z,
             Vec3A::Y,
-            90.0,
+            20.0,
             16.0 / 9.0,
-            0.1,
+            0.0,
             10.0,
             0.0..1.0,
             Color::new(Vec3A::ZERO),
