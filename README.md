@@ -45,6 +45,8 @@ Learning Rust via [Peter Shirley's Ray Tracing in One Weekend](https://raytracin
 
 - [Peter Shirley's "In One Weekend" Blog](https://in1weekend.blogspot.com/), serving as addendums to his aforementioned book series.
 - [Pharr's, Jakob's, and Humphrey's "Physically Based Rendering: From Theory to Implementation"](https://pbr-book.org/): incorporated some of the acceleration structure ideas for the Tree module.
+- [Tavian Barnes' blog posts on branchless ray-bbox intersections](https://tavianator.com/2022/ray_box_boundary.html): Used the branchless implementation in the bounding box module. Made those hit checks a lot faster.
+- [Inigo Quilez's article on bilinear interpolation](https://iquilezles.org/articles/ibilinear/): Used the shadertoy examples in the Quad module, which is a generic quadrilaterial primitive.
 
 ## Examples
 
