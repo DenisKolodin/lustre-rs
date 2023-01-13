@@ -1,23 +1,10 @@
 use rand::SeedableRng;
 
-use crate::{
+use lustre::{
     cli::{Arguments, Parser},
+    render, scenes,
     tree::Tree,
 };
-
-mod bounds;
-mod bvh;
-mod camera;
-mod cli;
-mod color;
-mod hittables;
-mod material;
-mod ray;
-mod render;
-mod scenes;
-mod textures;
-mod tree;
-mod utils;
 
 fn main() {
     // Parsing cli args
