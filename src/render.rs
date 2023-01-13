@@ -9,7 +9,37 @@ use {indicatif::ParallelProgressIterator, rayon::prelude::*};
 #[cfg(not(feature = "parallel"))]
 use indicatif::ProgressIterator;
 
-use crate::{camera::Camera, color::Color, hittables::Hittable, utils::progress::get_progressbar};
+use crate::{
+    camera::Camera, color::Color, hittables::Hittable, tree::Tree, utils::progress::get_progressbar,
+};
+
+pub struct RenderContext {
+    integrator: Renderer,
+    camera: Camera,
+    geometry: std::sync::Arc<dyn Hittable>,
+}
+
+impl RenderContext {
+    pub fn from_arguments(args: &crate::cli::Arguments, rng: &mut impl Rng) -> Self {
+        let (geometry, camera, (width, height)) =
+            crate::scenes::get_scene(args.image_width, args.scene, rng);
+        let integrator = Renderer::new(width, height, args.samples_per_pixel, args.bounce_depth);
+        let geometry = Tree::new(
+            geometry,
+            camera.shutter_open_time,
+            camera.shutter_close_time,
+        );
+        Self {
+            integrator,
+            camera,
+            geometry: geometry.wrap(),
+        }
+    }
+
+    pub fn render(&self) -> image::RgbImage {
+        self.integrator.render_scene(self.camera, &self.geometry)
+    }
+}
 
 /// Image Renderer storing scene context values such as image dimensions and samples per pixel
 #[derive(Debug, Clone, Copy)]
@@ -66,7 +96,7 @@ impl Renderer {
     ///
     /// A scene consists of a [Camera] and some [Hittable].
     /// This functions outputs its progress to the commandline.
-    pub fn render_scene(&self, cam: Camera, world: impl Hittable) -> image::RgbImage {
+    pub fn render_scene(&self, cam: Camera, world: &impl Hittable) -> image::RgbImage {
         let progress_bar = get_progressbar((self.image_height * self.image_width) as u64)
             .with_prefix("Generating pixels");
 
@@ -88,7 +118,7 @@ impl Renderer {
                         // from_rng(...) gives Result, can assume it won't fail
                         || SmallRng::from_rng(&mut rand::thread_rng()).unwrap(),
                         // current sample # doesn't matter, ignore
-                        |rng, _| self.compute_pixel_v(&cam, &world, x, y, rng),
+                        |rng, _| self.compute_pixel_v(&cam, world, x, y, rng),
                     )
                     .sum();
 

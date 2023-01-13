@@ -13,7 +13,7 @@ use rand::Rng;
 use crate::{color::Color, ray::Ray, utils::random::rand_vec3_in_unit_disk};
 
 /// A Camera that generates rays
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Camera {
     /// Camera position in space
     origin: Vec3A,
@@ -32,8 +32,10 @@ pub struct Camera {
     w: Vec3A,
     /// Radius of the approximated camera lens
     lens_radius: f32,
-    /// Range of time in which shutter is open,
-    pub shutter_time: Range<f32>,
+    /// Shutter open time,
+    pub shutter_open_time: f32,
+    /// Shutter close time
+    pub shutter_close_time: f32,
     /// Background color
     pub bg_color: Color,
     /// Aspect ratio
@@ -87,7 +89,8 @@ impl Camera {
             v,
             w,
             lens_radius,
-            shutter_time,
+            shutter_open_time: shutter_time.start,
+            shutter_close_time: shutter_time.end,
             bg_color,
             aspect_ratio,
         }
@@ -102,7 +105,7 @@ impl Camera {
             direction: self.ll_corner + u * self.horizontal + v * self.vertical
                 - self.origin
                 - offset,
-            time: rng.gen_range(self.shutter_time.start..self.shutter_time.end),
+            time: rng.gen_range(self.shutter_open_time..self.shutter_close_time),
         }
     }
 }
