@@ -57,3 +57,6 @@ The Cornell Box, rendered at 2k x 2k with 10k samples per pixel:
 
 A modified (in the dark with lights!) version of the RT in One Weekend cover photo, rendered at 4k with 5k samples per pixel:
 ![A render of a modified RT in One Weekend cover photo, rendered at 5000 samples at a 4k resolution](images/lights.png)
+
+A slightly altered version of the final scene from [Book 2 of RT in One Weekend](https://raytracing.github.io/books/RayTracingTheNextWeek.html), rendered at 4k with 10k samples per pixel (this took ~27 hours to render!):
+![A render of the final scene in Ray Tracing: The Next Week, rendered at 10000 samples at a 4k resolution](images/final-scene.png)
