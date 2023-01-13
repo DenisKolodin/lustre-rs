@@ -36,7 +36,7 @@ fn main() {
     };
 
     // Get scene
-    let (cam, world, dimensions) =
+    let (world, cam, dimensions) =
         scenes::get_scene(cli_args.image_width, cli_args.scene, &mut rng);
     let world = Tree::new(world, cam.shutter_time.start, cam.shutter_time.end);
 

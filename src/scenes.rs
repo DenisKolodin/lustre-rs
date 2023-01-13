@@ -38,70 +38,51 @@ pub enum SceneType {
     DebugFinal,
 }
 
-/// Returns a [Camera], a list of objects ([HittableList]), and the image dimensions as a tuple.
-pub fn get_scene(
-    image_width: u32,
-    scene_type: SceneType,
-    rng: &mut impl Rng,
-) -> (Camera, HittableList, (u32, u32)) {
+#[allow(unused_mut)]
+/// Returns the scene-specific camera
+pub fn get_camera(scene_type: SceneType) -> Camera {
     // Setup default camera properties
-    // uncomment the `mut` once its needed
+    // These are default from the cover photo
+    // and some other small scenes
     let mut aspect_ratio = 16.0 / 9.0;
     let mut look_from = Vec3A::new(13.0, 2.0, 3.0);
     let mut look_at = Vec3A::ZERO;
-    let /* mut */ view_up = Vec3A::Y;
+    let mut view_up = Vec3A::Y;
     let mut vert_fov = 20.0;
     let mut aperture = 0.0;
     let mut focus_dist = 10.0;
-    let /* mut */ shutter_time = 0.0..1.0;
+    let mut shutter_time = 0.0..1.0;
     let mut bg_color = Color::new(Vec3A::new(0.7, 0.8, 1.0));
 
-    // Grabs the scene and changes any cam params
-    let scene = match scene_type {
+    // modify camera properties based on chosen scene
+    match scene_type {
         SceneType::MaterialDev => {
-            aspect_ratio = 16.0 / 9.0;
             look_from = Vec3A::ZERO;
             look_at = -Vec3A::Z;
             focus_dist = 1.0;
             vert_fov = 90.0;
-            gen_mat_dev()
         }
         SceneType::CoverPhoto => {
             aperture = 0.1;
             aspect_ratio = 3.0 / 2.0;
-            gen_random_spheres(rng)
         }
-
-        SceneType::TwoSpheres => gen_two_spheres(),
-        SceneType::TwoPerlinSpheres => gen_two_perlin_spheres(),
-        SceneType::Earth => gen_earth(),
+        SceneType::TwoSpheres | SceneType::TwoPerlinSpheres | SceneType::Earth => (),
         SceneType::SimpleLight => {
             bg_color = Color::new(Vec3A::ZERO);
             look_from = Vec3A::new(26.0, 3.0, 6.0);
             look_at = Vec3A::new(0.0, 2.0, 0.0);
-            gen_simple_light()
         }
-        SceneType::CornellBox => {
+        SceneType::CornellBox | SceneType::CornellBox2 => {
             aspect_ratio = 1.0;
             bg_color = Color::new(Vec3A::ZERO);
             look_from = Vec3A::new(278.0, 278.0, -800.0);
             look_at = Vec3A::new(278.0, 278.0, 0.0);
             vert_fov = 40.0;
-            gen_cornell_box()
-        }
-        SceneType::CornellBox2 => {
-            aspect_ratio = 1.0;
-            bg_color = Color::new(Vec3A::ZERO);
-            look_from = Vec3A::new(278.0, 278.0, -800.0);
-            look_at = Vec3A::new(278.0, 278.0, 0.0);
-            vert_fov = 40.0;
-            gen_cornell_box2()
         }
         SceneType::RandomLights => {
             aperture = 0.1;
             aspect_ratio = 3.0 / 2.0;
             bg_color = Color::new(Vec3A::from(bg_color) / 10.0);
-            gen_emissive_random_spheres(rng)
         }
         SceneType::FinalScene => {
             aspect_ratio = 1.0;
@@ -112,7 +93,6 @@ pub fn get_scene(
             focus_dist = look_from.distance(look_at);
             // TODO this is patch, what is the real bug?
             aperture = focus_dist.recip();
-            gen_book2(rng)
         }
         SceneType::DebugCornell => {
             aspect_ratio = 1.0;
@@ -120,7 +100,6 @@ pub fn get_scene(
             look_from = Vec3A::new(278.0, 278.0, -800.0);
             look_at = Vec3A::new(278.0, 278.0, 0.0);
             vert_fov = 40.0;
-            gen_debug_cornell()
         }
         SceneType::DebugFinal => {
             aspect_ratio = 1.0;
@@ -132,12 +111,10 @@ pub fn get_scene(
             vert_fov = 20.0;
             focus_dist = look_from.distance(look_at);
             aperture = focus_dist.recip();
-            gen_debug_book2(rng)
         }
-    };
+    }
 
-    // set up camera with (possibly modified) properies
-    let cam = Camera::new(
+    Camera::new(
         look_from,
         look_at,
         view_up,
@@ -147,12 +124,44 @@ pub fn get_scene(
         focus_dist,
         shutter_time,
         bg_color,
-    );
+    )
+}
 
-    let image_height = (image_width as f32 / aspect_ratio) as u32;
+/// Returns the scene-specific geometry
+pub fn get_geometry(
+    scene_type: SceneType,
+    rng: &mut impl Rng,
+    shutter_time: std::ops::Range<f32>,
+) -> HittableList {
+    match scene_type {
+        SceneType::MaterialDev => gen_mat_dev(),
+        SceneType::CoverPhoto => gen_random_spheres(rng),
+        SceneType::TwoSpheres => gen_two_spheres(),
+        SceneType::TwoPerlinSpheres => gen_two_perlin_spheres(),
+        SceneType::Earth => gen_earth(),
+        SceneType::SimpleLight => gen_simple_light(),
+        SceneType::CornellBox => gen_cornell_box(),
+        SceneType::CornellBox2 => gen_cornell_box2(),
+        SceneType::RandomLights => gen_emissive_random_spheres(rng),
+        SceneType::FinalScene => gen_book2(rng, shutter_time),
+        SceneType::DebugCornell => gen_debug_cornell(),
+        SceneType::DebugFinal => gen_debug_book2(rng, shutter_time),
+    }
+}
+
+/// Returns a list of objects ([HittableList]), a [Camera], and the image dimensions.
+pub fn get_scene(
+    image_width: u32,
+    scene_type: SceneType,
+    rng: &mut impl Rng,
+) -> (HittableList, Camera, (u32, u32)) {
+    let cam = get_camera(scene_type);
+    let scene = get_geometry(scene_type, rng, cam.shutter_time.clone());
+
+    let image_height = (image_width as f32 / cam.aspect_ratio) as u32;
     let dimensions = (image_width, image_height);
 
-    (cam, scene, dimensions)
+    (scene, cam, dimensions)
 }
 
 /// Returns a [HittableList] containing a few spheres with unique materials
@@ -667,7 +676,7 @@ fn gen_emissive_random_spheres(rng: &mut impl Rng) -> HittableList {
 }
 
 /// The scene defined at the end of the second book for Ray Tracing in One Weekend
-fn gen_book2(rng: &mut impl Rng) -> HittableList {
+fn gen_book2(rng: &mut impl Rng, shutter_time: std::ops::Range<f32>) -> HittableList {
     let mut ground_boxes: HittableList = vec![];
     let ground_mat = Arc::new(Material::Lambertian {
         albedo: Arc::new(SolidColor::new(Vec3A::new(0.48, 0.83, 0.53))),
@@ -701,7 +710,8 @@ fn gen_book2(rng: &mut impl Rng) -> HittableList {
     }
 
     // BVH-ify the ground boxes
-    let mut all_objects: HittableList = vec![Tree::new(ground_boxes, 0.0, 1.0).wrap()];
+    let mut all_objects: HittableList =
+        vec![Tree::new(ground_boxes, shutter_time.start, shutter_time.end).wrap()];
 
     // light
     let light_mat = Arc::new(Material::DiffuseLight {
@@ -790,7 +800,8 @@ fn gen_book2(rng: &mut impl Rng) -> HittableList {
     .take(1000)
     .collect();
 
-    let wrapped_spheres: Arc<dyn Hittable> = Tree::new(rand_sphere_group, 0.0, 1.0).wrap();
+    let wrapped_spheres: Arc<dyn Hittable> =
+        Tree::new(rand_sphere_group, shutter_time.start, shutter_time.end).wrap();
     all_objects.push(
         Transform::new(&wrapped_spheres)
             .with_axis_angle_degrees(glam::Vec3::Y, 15.0)
@@ -803,7 +814,7 @@ fn gen_book2(rng: &mut impl Rng) -> HittableList {
 }
 
 // Like [gen_book2_scene], but only the light and random white sphere group
-fn gen_debug_book2(rng: &mut impl Rng) -> HittableList {
+fn gen_debug_book2(rng: &mut impl Rng, shutter_time: std::ops::Range<f32>) -> HittableList {
     let mut all_objects: Vec<Arc<dyn Hittable>> = vec![];
     // light
     let light_mat = Arc::new(Material::DiffuseLight {
@@ -822,7 +833,8 @@ fn gen_debug_book2(rng: &mut impl Rng) -> HittableList {
     .take(1000)
     .collect();
 
-    let wrapped_spheres: Arc<dyn Hittable> = Tree::new(rand_sphere_group, 0.0, 1.0).wrap();
+    let wrapped_spheres: Arc<dyn Hittable> =
+        Tree::new(rand_sphere_group, shutter_time.start, shutter_time.end).wrap();
 
     // eprintln!(
     //     "centroid of wrapped spheres: {}",
