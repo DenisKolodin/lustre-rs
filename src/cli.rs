@@ -5,6 +5,11 @@ pub use clap::Parser;
 
 use crate::scenes::SceneType;
 
+/// Parses the commandline arguments into an [Arguments] struct
+pub fn parse_args() -> Arguments {
+    Arguments::parse()
+}
+
 /// Argument definitions for [clap::Parser]
 #[derive(Parser, Debug)]
 #[clap(version, about)]

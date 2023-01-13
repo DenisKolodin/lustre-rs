@@ -1,14 +1,10 @@
 use rand::SeedableRng;
 
-use lustre::{
-    cli::{Arguments, Parser},
-    render, scenes,
-    tree::Tree,
-};
+use lustre::{cli, render, scenes, tree::Tree};
 
 fn main() {
     // Parsing cli args
-    let cli_args = Arguments::parse();
+    let cli_args = cli::parse_args();
 
     // set up enviroment
     let mut rng = if let Some(seed) = cli_args.seed {
