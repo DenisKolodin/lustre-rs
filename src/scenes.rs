@@ -156,7 +156,8 @@ pub fn get_scene(
     rng: &mut impl Rng,
 ) -> (HittableList, Camera, (u32, u32)) {
     let cam = get_camera(scene_type);
-    let scene = get_geometry(scene_type, rng, cam.shutter_time.clone());
+    let shutter_time = cam.shutter_open_time..cam.shutter_close_time;
+    let scene = get_geometry(scene_type, rng, shutter_time);
 
     let image_height = (image_width as f32 / cam.aspect_ratio) as u32;
     let dimensions = (image_width, image_height);
