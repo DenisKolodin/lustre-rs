@@ -4,8 +4,6 @@
 
 Learning Rust via [Peter Shirley's Ray Tracing in One Weekend](https://raytracing.github.io/) Book series and other sources.
 
-![a modified cover photo scene of Peter Shirley's Ray Tracing in One Weekend book, rendered at 10,000 samples per pixel at about 4k resolution](images/big.png)
-
 ## Usage
 
 1. If you don't have Rust installed, take a look at [Rust's Getting Started page](https://www.rust-lang.org/learn/get-started).
