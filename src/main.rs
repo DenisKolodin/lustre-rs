@@ -1,6 +1,6 @@
 use rand::SeedableRng;
 
-use lustre::{cli, render, scenes, tree::Tree};
+use lustre::{cli, render::RenderContext};
 
 fn main() {
     // Parsing cli args
@@ -18,19 +18,8 @@ fn main() {
         rand::rngs::SmallRng::from_entropy()
     };
 
-    // Get scene
-    let (world, cam, dimensions) =
-        scenes::get_scene(cli_args.image_width, cli_args.scene, &mut rng);
-    let world = Tree::new(world, cam.shutter_time.start, cam.shutter_time.end);
-
-    let renderer = render::Renderer::new(
-        dimensions.0,
-        dimensions.1,
-        cli_args.samples_per_pixel,
-        cli_args.bounce_depth,
-    );
-
-    let img_buf = renderer.render_scene(cam, world);
+    let render_context = RenderContext::from_arguments(&cli_args, &mut rng);
+    let img_buf = render_context.render();
 
     // write image to file
     match img_buf.save(&cli_args.output) {
