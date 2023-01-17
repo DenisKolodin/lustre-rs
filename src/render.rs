@@ -13,8 +13,12 @@ use crate::{
     camera::Camera, color::Color, hittables::Hittable, tree::Tree, utils::progress::get_progressbar,
 };
 
+/// Stores render context values such as image dimensions and scene geometry
 pub struct RenderContext {
-    integrator: Renderer,
+    image_width: u32,
+    image_height: u32,
+    samples_per_pixel: u32,
+    bounce_depth: u16,
     camera: Camera,
     geometry: std::sync::Arc<dyn Hittable>,
 }
@@ -23,46 +27,19 @@ impl RenderContext {
     pub fn from_arguments(args: &crate::cli::Arguments, rng: &mut impl Rng) -> Self {
         let (geometry, camera, (width, height)) =
             crate::scenes::get_scene(args.image_width, args.scene, rng);
-        let integrator = Renderer::new(width, height, args.samples_per_pixel, args.bounce_depth);
         let geometry = Tree::new(
             geometry,
             camera.shutter_open_time,
             camera.shutter_close_time,
         );
+
         Self {
-            integrator,
+            image_width: width,
+            image_height: height,
             camera,
             geometry: geometry.wrap(),
-        }
-    }
-
-    pub fn render(&self) -> image::RgbImage {
-        self.integrator.render_scene(self.camera, &self.geometry)
-    }
-}
-
-/// Image Renderer storing scene context values such as image dimensions and samples per pixel
-#[derive(Debug, Clone, Copy)]
-pub struct Renderer {
-    image_width: u32,
-    image_height: u32,
-    samples_per_pixel: u32,
-    bounce_depth: u16,
-}
-
-impl Renderer {
-    /// Creates a new [Renderer].
-    pub fn new(
-        image_width: u32,
-        image_height: u32,
-        samples_per_pixel: u32,
-        bounce_depth: u16,
-    ) -> Self {
-        Self {
-            image_width,
-            image_height,
-            samples_per_pixel,
-            bounce_depth,
+            bounce_depth: args.bounce_depth,
+            samples_per_pixel: args.samples_per_pixel,
         }
     }
 
@@ -71,14 +48,7 @@ impl Renderer {
     /// Uses the provided [Camera] to translate the image coordinates
     /// to world space coordinates, then computes the color value
     #[inline]
-    fn compute_pixel_v(
-        &self,
-        cam: &Camera,
-        world: &impl Hittable,
-        x: u32,
-        y: u32,
-        rng: &mut impl Rng,
-    ) -> Vec3A {
+    fn compute_pixel_v(&self, x: u32, y: u32, rng: &mut impl Rng) -> Vec3A {
         // convert buffer indices to viewport coordinates
         let offset_u: f32 = rng.gen();
         let offset_v: f32 = rng.gen();
@@ -86,9 +56,12 @@ impl Renderer {
         let v = ((self.image_height - y) as f32 + offset_v) / (self.image_height - 1) as f32;
 
         // trace ray
-        let contrib = cam
-            .get_ray(u, v, rng)
-            .shade(world, self.bounce_depth, cam.bg_color, rng);
+        let contrib = self.camera.get_ray(u, v, rng).shade(
+            &self.geometry,
+            self.bounce_depth,
+            self.camera.bg_color,
+            rng,
+        );
         Vec3A::from(contrib)
     }
 
@@ -96,13 +69,13 @@ impl Renderer {
     ///
     /// A scene consists of a [Camera] and some [Hittable].
     /// This functions outputs its progress to the commandline.
-    pub fn render_scene(&self, cam: Camera, world: &impl Hittable) -> image::RgbImage {
+    pub fn render(&self) -> crate::image::ImageBuf {
         let progress_bar = get_progressbar((self.image_height * self.image_width) as u64)
             .with_prefix("Generating pixels");
 
         // Allocate image buffer
-        let mut img_buf: image::RgbImage =
-            image::ImageBuffer::new(self.image_width, self.image_height);
+        let mut img_buf: crate::image::ImageBuf =
+            crate::image::ImageBuf::new(self.image_width, self.image_height);
 
         // Generate image
         #[cfg(feature = "parallel")]
@@ -118,7 +91,7 @@ impl Renderer {
                         // from_rng(...) gives Result, can assume it won't fail
                         || SmallRng::from_rng(&mut rand::thread_rng()).unwrap(),
                         // current sample # doesn't matter, ignore
-                        |rng, _| self.compute_pixel_v(&cam, world, x, y, rng),
+                        |rng, _| self.compute_pixel_v(x, y, rng),
                     )
                     .sum();
 
@@ -129,7 +102,7 @@ impl Renderer {
                 color_v = color_v.powf(0.5); // sqrt
 
                 // modify pixel with generated color value
-                *pixel = image::Rgb::<u8>::from(Color::new(color_v));
+                *pixel = Color::new(color_v).into();
             });
         #[cfg(not(feature = "parallel"))]
         img_buf
@@ -142,7 +115,7 @@ impl Renderer {
                         // current sample # doesn't matter, ignore
                         |_| {
                             let rng = &mut SmallRng::from_rng(&mut rand::thread_rng()).unwrap();
-                            self.compute_pixel_v(&cam, &world, x, y, rng)
+                            self.compute_pixel_v(x, y, rng)
                         },
                     )
                     .sum();
@@ -154,7 +127,7 @@ impl Renderer {
                 color_v = color_v.powf(0.5); // sqrt
 
                 // modify pixel with generated color value
-                *pixel = image::Rgb::<u8>::from(Color::new(color_v));
+                *pixel = Color::new(color_v).into();
             });
 
         img_buf
