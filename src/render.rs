@@ -108,7 +108,9 @@ impl RenderContext {
                 color_v /= self.samples_per_pixel as f32;
 
                 // "gamma" correction
-                color_v = color_v.powf(0.5); // sqrt
+                if !self.output_hdr {
+                    color_v = color_v.powf(0.5); // sqrt
+                }
 
                 // modify pixel with generated color value
                 *pixel = Color::new(color_v).into();
@@ -133,7 +135,9 @@ impl RenderContext {
                 color_v /= self.samples_per_pixel as f32;
 
                 // "gamma" correction
-                color_v = color_v.powf(0.5); // sqrt
+                if !self.output_hdr {
+                    color_v = color_v.powf(0.5); // sqrt
+                }
 
                 // modify pixel with generated color value
                 *pixel = Color::new(color_v).into();
