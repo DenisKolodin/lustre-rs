@@ -23,7 +23,7 @@ pub struct RenderContext {
     bounce_depth: u16,
     camera: Camera,
     geometry: std::sync::Arc<dyn Hittable>,
-    output_format: ImageFormat,
+    output_hdr: bool,
 }
 
 impl RenderContext {
@@ -36,6 +36,11 @@ impl RenderContext {
             camera.shutter_close_time,
         );
 
+        let output_hdr = matches!(
+            ImageFormat::from_path(&args.output).unwrap(),
+            ImageFormat::OpenExr
+        );
+
         Self {
             image_width: width,
             image_height: height,
@@ -43,7 +48,7 @@ impl RenderContext {
             geometry: geometry.wrap(),
             bounce_depth: args.bounce_depth,
             samples_per_pixel: args.samples_per_pixel,
-            output_format: ImageFormat::from_path(&args.output).unwrap(),
+            output_hdr,
         }
     }
 
@@ -134,9 +139,11 @@ impl RenderContext {
                 *pixel = Color::new(color_v).into();
             });
 
-        match self.output_format {
-            ImageFormat::OpenExr => DynamicImage::ImageRgb32F(img_buf),
-            _ => DynamicImage::ImageRgb8(DynamicImage::ImageRgb32F(img_buf).into_rgb8()),
+        if self.output_hdr {
+            DynamicImage::ImageRgb32F(img_buf)
+        } else {
+            use image::buffer::ConvertBuffer;
+            DynamicImage::ImageRgb8(img_buf.convert())
         }
     }
 }
