@@ -18,7 +18,7 @@ pub struct Arguments {
     #[clap(
         short,
         long,
-        value_parser,
+        value_parser = valid_image_file,
         default_value = "output.png",
         value_name = "FILE"
     )]
@@ -84,6 +84,33 @@ where
     }
 }
 
+/// Checks whether the given output file is:
+/// * a valid path (always the case)
+/// * a supported image format
+fn valid_image_file(s: &str) -> Result<std::path::PathBuf, String> {
+    // &str -> PathBuf conversion is Infallible
+    let path = s.parse::<std::path::PathBuf>().unwrap();
+    match image::ImageFormat::from_path(&path).and_then(valid_image_format) {
+        Ok(_) => Ok(path),
+        Err(e) => Err(e.to_string()),
+    }
+}
+
+/// Helper func for [valid_image_file] to check against compiled image formats
+///
+/// Since [image::ImageOutputFormat] conditionally compiles the supported formats,
+/// use that existing functionality instead of manually parsing which formats
+/// this crate supports against the feature flags of this crate.
+fn valid_image_format(format: image::ImageFormat) -> image::ImageResult<()> {
+    use image::{error, ImageOutputFormat};
+    match ImageOutputFormat::from(format) {
+        ImageOutputFormat::Unsupported(_) => Err(error::ImageError::Unsupported(
+            error::UnsupportedError::from(error::ImageFormatHint::from(format)),
+        )),
+        _ => Ok(()),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -92,5 +119,20 @@ mod tests {
     fn check_cli() {
         use clap::CommandFactory;
         Arguments::command().debug_assert()
+    }
+
+    #[test]
+    fn valid_output_file() {
+        use clap::CommandFactory;
+        // text files are not valid image files
+        let res = Arguments::command().try_get_matches_from(["lustre", "--output", "bad.txt"]);
+
+        assert!(res.is_err(), "Expected an error during argument parsing");
+
+        assert_eq!(
+            res.as_ref().unwrap_err().kind(),
+            clap::error::ErrorKind::ValueValidation,
+            "Expected an unrecognized image format error"
+        );
     }
 }
