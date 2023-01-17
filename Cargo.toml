@@ -30,6 +30,7 @@ default = ["fast-math", "parallel"]
 
 fast-math = ["glam/fast-math"]
 parallel = ["rayon", "indicatif/rayon"]
+hdr = ["image/openexr"]
 
 [profile.release-lto]
 inherits = "release"
