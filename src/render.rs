@@ -107,11 +107,6 @@ impl RenderContext {
                 // Account for number of samples
                 color_v /= self.samples_per_pixel as f32;
 
-                // "gamma" correction
-                if !self.output_hdr {
-                    color_v = color_v.powf(0.5); // sqrt
-                }
-
                 // modify pixel with generated color value
                 *pixel = Color::new(color_v).into();
             });
@@ -134,11 +129,6 @@ impl RenderContext {
                 // Account for number of samples
                 color_v /= self.samples_per_pixel as f32;
 
-                // "gamma" correction
-                if !self.output_hdr {
-                    color_v = color_v.powf(0.5); // sqrt
-                }
-
                 // modify pixel with generated color value
                 *pixel = Color::new(color_v).into();
             });
@@ -146,6 +136,13 @@ impl RenderContext {
         if self.output_hdr {
             DynamicImage::ImageRgb32F(img_buf)
         } else {
+            // "gamma" correction
+            for pixel in img_buf.pixels_mut() {
+                let mut color_v: Vec3A = Color::from(*pixel).into();
+                color_v = color_v.powf(0.5); // sqrt
+                *pixel = Color::new(color_v).into();
+            }
+
             use image::buffer::ConvertBuffer;
             DynamicImage::ImageRgb8(img_buf.convert())
         }
