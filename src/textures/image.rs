@@ -1,12 +1,14 @@
 //! An image-backed texture mapping
 
+use image::{DynamicImage, GenericImageView, Pixel};
+
 use crate::{color::Color, textures::Texture};
 
 /// An image-based texture
 #[derive(Debug)]
 pub struct ImageMap {
     /// The image buffer used as the texture
-    image: image::RgbImage,
+    image: DynamicImage,
 }
 
 impl ImageMap {
@@ -20,9 +22,7 @@ impl ImageMap {
     /// available under CC-BY-SA
     pub fn new(file_path: std::path::PathBuf) -> Self {
         match image::open(&file_path) {
-            Ok(img) => Self {
-                image: img.to_rgb8(),
-            },
+            Ok(image) => Self { image },
             Err(why) => {
                 eprintln!("Failed to open {file_path:?}: {why}");
                 Self::default()
@@ -34,9 +34,7 @@ impl ImageMap {
 impl Default for ImageMap {
     fn default() -> Self {
         match image::load_from_memory(include_bytes!("../../resources/default.png")) {
-            Ok(default) => Self {
-                image: default.to_rgb8(),
-            },
+            Ok(image) => Self { image },
             Err(_) => unreachable!("We should have access to the default image"),
         }
     }
@@ -53,7 +51,7 @@ impl Texture for ImageMap {
         let i = (i as u32).clamp(0, self.image.width() - 1);
         let j = (j as u32).clamp(0, self.image.height() - 1);
 
-        let pixel = self.image[(i, j)];
+        let pixel = self.image.get_pixel(i, j).to_rgb();
         Color::from(pixel)
     }
 }

@@ -43,3 +43,19 @@ impl From<image::Rgb<u8>> for Color {
         }
     }
 }
+
+// conversion for hdr pixels
+impl From<Color> for image::Rgb<f32> {
+    fn from(color: Color) -> Self {
+        Self(color.value.to_array())
+    }
+}
+
+impl From<image::Rgb<f32>> for Color {
+    fn from(rgb: image::Rgb<f32>) -> Self {
+        // let scale = 1.0 / 255.0;
+        Self {
+            value: Vec3A::from_array(rgb.0 /* .map(|channel| channel as f32 * scale) */),
+        }
+    }
+}
