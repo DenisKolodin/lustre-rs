@@ -3,6 +3,8 @@
 use glam::Vec3A;
 use rand::{rngs::SmallRng, Rng, SeedableRng};
 
+use image::{DynamicImage, ImageFormat};
+
 #[cfg(feature = "parallel")]
 use {indicatif::ParallelProgressIterator, rayon::prelude::*};
 
@@ -21,6 +23,7 @@ pub struct RenderContext {
     bounce_depth: u16,
     camera: Camera,
     geometry: std::sync::Arc<dyn Hittable>,
+    output_format: ImageFormat,
 }
 
 impl RenderContext {
@@ -40,6 +43,7 @@ impl RenderContext {
             geometry: geometry.wrap(),
             bounce_depth: args.bounce_depth,
             samples_per_pixel: args.samples_per_pixel,
+            output_format: ImageFormat::from_path(&args.output).unwrap(),
         }
     }
 
@@ -69,13 +73,13 @@ impl RenderContext {
     ///
     /// A scene consists of a [Camera] and some [Hittable].
     /// This functions outputs its progress to the commandline.
-    pub fn render(&self) -> crate::image::ImageBuf {
+    pub fn render(&self) -> DynamicImage {
         let progress_bar = get_progressbar((self.image_height * self.image_width) as u64)
             .with_prefix("Generating pixels");
 
         // Allocate image buffer
-        let mut img_buf: crate::image::ImageBuf =
-            crate::image::ImageBuf::new(self.image_width, self.image_height);
+        // default to f32 to keep hdr data until write time
+        let mut img_buf = image::Rgb32FImage::new(self.image_width, self.image_height);
 
         // Generate image
         #[cfg(feature = "parallel")]
@@ -130,6 +134,9 @@ impl RenderContext {
                 *pixel = Color::new(color_v).into();
             });
 
-        img_buf
+        match self.output_format {
+            ImageFormat::OpenExr => DynamicImage::ImageRgb32F(img_buf),
+            _ => DynamicImage::ImageRgb8(DynamicImage::ImageRgb32F(img_buf).into_rgb8()),
+        }
     }
 }
