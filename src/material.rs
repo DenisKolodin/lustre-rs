@@ -5,7 +5,12 @@ use std::sync::Arc;
 use glam::Vec3A;
 use rand::Rng;
 
-use crate::{color::Color, hittables::HitRecord, ray::Ray, textures::Texture};
+use crate::{
+    color::{colors, Color},
+    hittables::HitRecord,
+    ray::Ray,
+    textures::Texture,
+};
 
 /// Returns a reflected ray direction based on the given normal
 ///
@@ -79,7 +84,7 @@ impl Material {
                 // returns a random unit direction
                 Some(ScatterRecord {
                     ray: Ray::new(rec.point, rand_unit_v, ray.time),
-                    attenuation: albedo.color(rec.u, rec.v, rec.point).into(),
+                    attenuation: albedo.color(rec.u, rec.v, rec.point),
                 })
             }
             Material::Lambertian { albedo } => {
@@ -95,7 +100,7 @@ impl Material {
 
                 Some(ScatterRecord {
                     ray: Ray::new(rec.point, scatter_dir, ray.time),
-                    attenuation: albedo.color(rec.u, rec.v, rec.point).into(),
+                    attenuation: albedo.color(rec.u, rec.v, rec.point),
                 })
             }
             Material::Metal { albedo, roughness } => {
@@ -109,7 +114,7 @@ impl Material {
 
                 (scattered.direction.dot(rec.normal) > 0.0).then_some(ScatterRecord {
                     ray: scattered,
-                    attenuation: albedo.color(rec.u, rec.v, rec.point).into(),
+                    attenuation: albedo.color(rec.u, rec.v, rec.point),
                 })
             }
             Material::Dielectric { refract_index } => {
@@ -135,7 +140,7 @@ impl Material {
 
                 Some(ScatterRecord {
                     ray: Ray::new(rec.point, direction, ray.time),
-                    attenuation: Vec3A::ONE,
+                    attenuation: colors::WHITE,
                 })
             }
             Material::DiffuseLight { .. } => None,
@@ -147,8 +152,8 @@ impl Material {
         match self {
             Material::DiffuseLight { albedo, brightness } => {
                 let color = albedo.color(u, v, point);
-                let val = *brightness * Vec3A::from(color);
-                Some(Color::new(val))
+                let val = *brightness * color;
+                Some(val)
             }
             // Make emission explicit; nothing emits unless specifically implemented.
             _ => None,

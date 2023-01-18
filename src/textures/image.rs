@@ -2,7 +2,10 @@
 
 use image::{DynamicImage, GenericImageView, Pixel};
 
-use crate::{color::Color, textures::Texture};
+use crate::{
+    color::{Color, VecExt},
+    textures::Texture,
+};
 
 /// An image-based texture
 #[derive(Debug)]
@@ -52,6 +55,6 @@ impl Texture for ImageMap {
         let j = (j as u32).clamp(0, self.image.height() - 1);
 
         let pixel = self.image.get_pixel(i, j).to_rgb();
-        Color::from(pixel)
+        Color::from_pixel(pixel)
     }
 }

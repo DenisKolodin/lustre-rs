@@ -5,7 +5,11 @@ use std::f32::INFINITY;
 use glam::Vec3A;
 use rand::Rng;
 
-use crate::{color::Color, hittables::Hittable, material::ScatterRecord};
+use crate::{
+    color::{colors, Color},
+    hittables::Hittable,
+    material::ScatterRecord,
+};
 
 /// A 3-dimensional Ray
 ///
@@ -56,7 +60,7 @@ impl Ray {
     ) -> Color {
         // Limit recursion depth
         if bounce_depth == 0 {
-            return Color::new(Vec3A::ZERO);
+            return colors::BLACK;
         }
 
         // Check for a hit against the `hittable` parameter
@@ -65,8 +69,8 @@ impl Ray {
             let mat = &hit_rec.material;
             // gather any emitted light contribution
             let emit_contrib = match mat.emit(hit_rec.u, hit_rec.v, hit_rec.point) {
-                Some(color) => Vec3A::from(color),
-                None => Vec3A::ZERO,
+                Some(color) => color,
+                None => colors::BLACK,
             };
 
             // gather any scattered light contribution
@@ -74,15 +78,15 @@ impl Ray {
                 // A successful ray scatter leads to more contributions.
                 Some(ScatterRecord { ray, attenuation }) => {
                     let bounced = ray.shade(hittable, bounce_depth - 1, bg_color, rng);
-                    attenuation * Vec3A::from(bounced)
+                    attenuation * bounced
                 }
                 // Otherwise, we're done
-                None => Vec3A::ZERO,
+                None => colors::BLACK,
             };
 
             // both emissives and scattered light contribute, unless they're zeroed
             // with current materials, one of these will always be zero
-            Color::new(emit_contrib + scatter_contrib)
+            emit_contrib + scatter_contrib
         } else {
             // without a hit, functions like a miss shader
             bg_color

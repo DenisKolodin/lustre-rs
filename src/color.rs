@@ -2,60 +2,39 @@
 
 use glam::Vec3A;
 
-/// A RGB color.
-///
-/// Holds its value as a [Vec3A]
-#[derive(Debug, Clone, Copy)]
-pub struct Color {
-    value: Vec3A,
+pub use glam::Vec3A as Color;
+
+pub mod colors {
+    pub const WHITE: super::Color = super::Vec3A::ONE;
+    pub const BLACK: super::Color = super::Vec3A::ZERO;
 }
 
-impl Color {
-    /// Creates a new Color
-    pub fn new(value: Vec3A) -> Self {
-        Self { value }
-    }
+// conversion for sdr pixels
+pub trait VecExt<P: image::Pixel> {
+    fn to_pixel(self) -> P;
+    fn from_pixel(p: P) -> Self;
 }
 
-impl From<Color> for Vec3A {
-    fn from(color: Color) -> Self {
-        color.value
-    }
-}
-
-// The important stuff
-impl From<Color> for image::Rgb<u8> {
-    fn from(color: Color) -> Self {
-        Self(
-            color
-                .value
-                .to_array()
-                .map(|channel| (channel.clamp(0.0, 1.0) * 255.0) as u8),
+impl VecExt<image::Rgb<u8>> for Vec3A {
+    fn to_pixel(self) -> image::Rgb<u8> {
+        image::Rgb::<u8>(
+            self.to_array()
+                .map(|channel| (channel.clamp(0.0, 1.0) * u8::MAX as f32) as u8),
         )
     }
-}
 
-impl From<image::Rgb<u8>> for Color {
-    fn from(rgb: image::Rgb<u8>) -> Self {
-        let scale = 1.0 / 255.0;
-        Self {
-            value: Vec3A::from_array(rgb.0.map(|channel| channel as f32 * scale)),
-        }
+    fn from_pixel(p: image::Rgb<u8>) -> Self {
+        Self::from_array(p.0.map(|channel| (channel as f32 / u8::MAX as f32).clamp(0.0, 1.0)))
     }
 }
 
 // conversion for hdr pixels
-impl From<Color> for image::Rgb<f32> {
-    fn from(color: Color) -> Self {
-        Self(color.value.to_array())
+impl VecExt<image::Rgb<f32>> for Vec3A {
+    fn to_pixel(self) -> image::Rgb<f32> {
+        image::Rgb::<f32>(self.to_array())
     }
-}
 
-impl From<image::Rgb<f32>> for Color {
-    fn from(rgb: image::Rgb<f32>) -> Self {
-        // let scale = 1.0 / 255.0;
-        Self {
-            value: Vec3A::from_array(rgb.0 /* .map(|channel| channel as f32 * scale) */),
-        }
+    fn from_pixel(p: image::Rgb<f32>) -> Self {
+        Self::from_array(p.0)
     }
 }

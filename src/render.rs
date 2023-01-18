@@ -12,7 +12,8 @@ use {indicatif::ParallelProgressIterator, rayon::prelude::*};
 use indicatif::ProgressIterator;
 
 use crate::{
-    camera::Camera, color::Color, hittables::Hittable, tree::Tree, utils::progress::get_progressbar,
+    camera::Camera, color::VecExt, hittables::Hittable, tree::Tree,
+    utils::progress::get_progressbar,
 };
 
 /// Stores render context values such as image dimensions and scene geometry
@@ -65,13 +66,12 @@ impl RenderContext {
         let v = ((self.image_height - y) as f32 + offset_v) / (self.image_height - 1) as f32;
 
         // trace ray
-        let contrib = self.camera.get_ray(u, v, rng).shade(
+        self.camera.get_ray(u, v, rng).shade(
             &self.geometry,
             self.bounce_depth,
             self.camera.bg_color,
             rng,
-        );
-        Vec3A::from(contrib)
+        )
     }
 
     /// Generates an image from the given scene.
@@ -108,7 +108,7 @@ impl RenderContext {
                 color_v /= self.samples_per_pixel as f32;
 
                 // modify pixel with generated color value
-                *pixel = Color::new(color_v).into();
+                *pixel = color_v.to_pixel();
             });
         #[cfg(not(feature = "parallel"))]
         img_buf
@@ -130,7 +130,7 @@ impl RenderContext {
                 color_v /= self.samples_per_pixel as f32;
 
                 // modify pixel with generated color value
-                *pixel = Color::new(color_v).into();
+                *pixel = color_v.to_pixel();
             });
 
         if self.output_hdr {
@@ -138,9 +138,9 @@ impl RenderContext {
         } else {
             // "gamma" correction
             for pixel in img_buf.pixels_mut() {
-                let mut color_v: Vec3A = Color::from(*pixel).into();
+                let mut color_v = Vec3A::from_pixel(*pixel);
                 color_v = color_v.powf(0.5); // sqrt
-                *pixel = Color::new(color_v).into();
+                *pixel = color_v.to_pixel();
             }
 
             use image::buffer::ConvertBuffer;
