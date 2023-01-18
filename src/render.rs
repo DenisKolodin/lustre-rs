@@ -144,10 +144,13 @@ impl RenderContext {
         if self.output_hdr {
             DynamicImage::ImageRgb32F(img_buf)
         } else {
-            // "gamma" correction
+            // gamma correction
+            // "gamma 2.2" is a good approximation of encoding sRGB pixels accurately
+            // see http://poynton.ca/notes/colour_and_gamma/
+            let gamma_constant = 2.2;
             for pixel in img_buf.pixels_mut() {
                 let mut color_v = Vec3A::from_pixel(*pixel);
-                color_v = color_v.powf(0.5); // sqrt
+                color_v = color_v.powf(1.0 / gamma_constant);
                 *pixel = color_v.to_pixel();
             }
 
