@@ -592,6 +592,7 @@ fn box_helper() -> HittableList {
     ]
 }
 
+/// Returns the Cornell Box with the inner boxes replaced with spheres
 fn gen_debug_cornell() -> HittableList {
     let mut world_box = box_helper();
     let white_diffuse = Arc::new(Material::Lambertian {
@@ -819,7 +820,7 @@ fn gen_book2(rng: &mut impl Rng, shutter_time: std::ops::Range<f32>) -> Hittable
     all_objects
 }
 
-// Like [gen_book2_scene], but only the light and random white sphere group
+/// Like [gen_book2], but only the light and random white sphere group
 fn gen_debug_book2(rng: &mut impl Rng, shutter_time: std::ops::Range<f32>) -> HittableList {
     let mut all_objects: Vec<Arc<dyn Hittable>> = vec![];
     // light

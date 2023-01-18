@@ -4,17 +4,21 @@ use glam::Vec3A;
 
 pub use glam::Vec3A as Color;
 
+/// Defined color constants
 pub mod colors {
     pub const WHITE: super::Color = super::Vec3A::ONE;
     pub const BLACK: super::Color = super::Vec3A::ZERO;
 }
 
-// conversion for sdr pixels
+/// [VecExt] serves to extend [glam]'s vector types to support conversion for [image::Pixel] implementations
 pub trait VecExt<P: image::Pixel> {
+    /// Convert from a [glam] vector to an [image::Pixel]
     fn to_pixel(self) -> P;
+    /// Convert from an [image::Pixel] to a [glam] vector
     fn from_pixel(p: P) -> Self;
 }
 
+// conversion for sdr pixels
 impl VecExt<image::Rgb<u8>> for Vec3A {
     fn to_pixel(self) -> image::Rgb<u8> {
         image::Rgb::<u8>(

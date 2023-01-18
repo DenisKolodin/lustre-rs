@@ -17,8 +17,11 @@ use crate::{
 /// these two members are the primary way to determine an intersection with a [`Hittable`]
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Ray {
+    /// The starting point of the ray
     pub origin: Vec3A,
+    /// The normalized direction that the ray points to
     pub direction: Vec3A,
+    /// "When" the ray was cast
     pub time: f32,
 }
 

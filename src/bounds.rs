@@ -5,13 +5,17 @@ use glam::Vec3A;
 use crate::{ray::Ray, utils::Axis};
 
 /// An axis aligned bounding box
+///
+/// Many of the the methods are adapted from [pbrt 3rd edition](https://pbr-book.org/3ed-2018/Geometry_and_Transformations/Bounding_Boxes)
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct BoundingBox {
+    /// Minimum coordinates for each dimension
     pub min: Vec3A,
+    /// Maximum coordinates for each dimension
     pub max: Vec3A,
 }
 
-#[allow(dead_code)]
+// #[allow(dead_code)]
 impl BoundingBox {
     /// Creates a new Axis aligned bounding box
     pub fn new(p0: Vec3A, p1: Vec3A) -> Self {
@@ -54,10 +58,9 @@ impl BoundingBox {
 
     /// Returns whether or not the ray hits this bounding box, using the ray's precomputed inverse direction.
     ///
-    /// Similar to [BoundingBox::hit], this checks for slab intersection in each of the 3 dimensions.
-    /// In addition, minimizes branching by using [f32::min] and [f32::max] intrinsics.
-    /// Based on the branchless bounding box intersection codes from
-    /// https://tavianator.com/2022/ray_box_boundary.html
+    /// Similar to [BoundingBox::hit], this function checks for slab intersection in each of the 3 dimensions.
+    /// In addition, this function minimizes branching by using [f32::min] and [f32::max] intrinsics.
+    /// Based on the branchless bounding box intersection codes from [Tavian Barnes' blog](https://tavianator.com/2022/ray_box_boundary.html)
     pub fn hit_with_inv(&self, ray: &Ray, ray_dir_inv: Vec3A, t_min: f32, t_max: f32) -> bool {
         let diff0 = self.min - ray.origin;
         let diff1 = self.max - ray.origin;
@@ -91,6 +94,7 @@ impl BoundingBox {
         }
     }
 
+    /// Returns a bounding box enclosing this and the given point
     pub fn add_point(&self, point: Vec3A) -> BoundingBox {
         Self {
             min: self.min.min(point),
@@ -98,21 +102,25 @@ impl BoundingBox {
         }
     }
 
+    /// Returns the vector along the box diagonal (from min point to max point)
     pub fn diagonal(&self) -> Vec3A {
         debug_assert!(self.min.cmplt(self.max).all());
         self.max - self.min
     }
 
+    /// Returns the total surface area of the bounding box
     pub fn surface_area(&self) -> f32 {
         let d = self.diagonal();
         2.0 * (d.x * d.y + d.x * d.z + d.y * d.z)
     }
 
+    /// Returns the total volume of the bounding box
     pub fn volume(&self) -> f32 {
         let d = self.diagonal();
         d.x * d.y * d.z
     }
 
+    /// Returns the longest [Axis] of the bounding box
     pub fn longest_axis(&self) -> Axis {
         let d = self.diagonal();
         if d.x > d.y && d.x > d.z {
@@ -124,18 +132,22 @@ impl BoundingBox {
         }
     }
 
+    /// Returns the position within the bounding box, relative to the corners of the bounding box
     pub fn offset(&self, point: Vec3A) -> Vec3A {
         (point - self.min) / self.diagonal()
     }
 
+    /// Returns the point that lies at the center of the bounding box
     pub fn centroid(&self) -> Vec3A {
         0.5 * self.min + 0.5 * self.max
     }
 
+    /// Returns whether or not this bounding box overlaps the other
     pub fn overlaps(&self, other: &Self) -> bool {
         self.max.cmpge(other.min).all() && self.min.cmple(other.max).all()
     }
 
+    /// Returns whether or not the given point is inside this bounding box
     pub fn inside(&self, point: Vec3A) -> bool {
         self.max.cmpge(point).all() && self.min.cmple(point).all()
     }

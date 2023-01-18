@@ -19,7 +19,7 @@ pub type ArenaIndex = usize;
 /// Essentially a newtype wrapper around [Vec], most of the functionality
 /// is calling the [Vec] methods of the same name.
 ///
-/// The Arena-specific work lies in the [add] method.
+/// The Arena-specific work lies in the [Arena::add] method.
 #[derive(Debug)]
 pub struct Arena<T> {
     /// The backing store for this allocator

@@ -1,7 +1,6 @@
 //! Definition of command line arguments
 
-// pub is neeeded for the program to called Arguments::parse()
-pub use clap::Parser;
+use clap::Parser;
 
 use crate::scenes::SceneType;
 
@@ -67,6 +66,7 @@ pub struct Arguments {
     pub seed: Option<u64>,
 }
 
+/// Checks whether the given integer value is greater than 0
 fn valid_count<T>(s: &str) -> Result<T, String>
 where
     T: num_traits::PrimInt + std::str::FromStr,
@@ -84,7 +84,9 @@ where
     }
 }
 
-/// Checks whether the given output file is:
+/// Checks whether the given output file is valid
+///
+/// Checks the following properties:
 /// * a valid path (always the case)
 /// * a supported image format
 fn valid_image_file(s: &str) -> Result<std::path::PathBuf, String> {

@@ -18,16 +18,24 @@ use crate::{
 
 /// Stores render context values such as image dimensions and scene geometry
 pub struct RenderContext {
+    /// Width of the output image
     image_width: u32,
+    /// Height of the output image
     image_height: u32,
+    /// Number of samples to take for each pixel computation
     samples_per_pixel: u32,
+    /// How many bounces a ray can go down through the scene
     bounce_depth: u16,
+    /// The ray-generating Camera
     camera: Camera,
+    /// The objects of the scene
     geometry: std::sync::Arc<dyn Hittable>,
+    /// Whether or not to output HDR images
     output_hdr: bool,
 }
 
 impl RenderContext {
+    /// Creates a new [RenderContext] from the given commandline arguments
     pub fn from_arguments(args: &crate::cli::Arguments, rng: &mut impl Rng) -> Self {
         let (geometry, camera, (width, height)) =
             crate::scenes::get_scene(args.image_width, args.scene, rng);
