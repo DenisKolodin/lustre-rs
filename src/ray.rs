@@ -1,7 +1,5 @@
 //! Implementation of a 3-dimensional Ray.
 
-use std::f32::INFINITY;
-
 use glam::Vec3A;
 use rand::Rng;
 
@@ -67,7 +65,7 @@ impl Ray {
         }
 
         // Check for a hit against the `hittable` parameter
-        if let Some(hit_rec) = hittable.hit(self, 0.001, INFINITY) {
+        if let Some(hit_rec) = hittable.hit(self, 0.001, f32::INFINITY) {
             // need a ref since scatter takes a ref to rec later
             let mat = &hit_rec.material;
             // gather any emitted light contribution
