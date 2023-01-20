@@ -198,8 +198,17 @@ impl Tree {
             let (min_bin_idx, min_cost) = costs
                 .iter()
                 .enumerate()
+                // .inspect(|&(i, c)| {
+                //     if self.arena.len() % 25 == 0 {
+                //         eprintln!("costs @ index {}: {}", i, c);
+                //     }
+                // })
                 .min_by(|(_, a_cost), (_, b_cost)| a_cost.total_cmp(b_cost))
                 .unwrap();
+
+            // if self.arena.len() % 25 == 0 {
+            //     eprintln!("min cost @ index {}: {}", min_bin_idx, min_cost);
+            // }
 
             // cost to make a node with all items is the # of items
             let leaf_cost = num_items as f32;
