@@ -85,6 +85,24 @@ impl std::fmt::Display for Bin {
     }
 }
 
+impl std::iter::Sum<Bin> for Bin {
+    fn sum<I: Iterator<Item = Bin>>(iter: I) -> Self {
+        iter.fold(Bin::default(), |acc, bin| Bin {
+            bbox: acc.bbox.union(bin.bbox),
+            count: acc.count + bin.count,
+        })
+    }
+}
+
+impl<'a> std::iter::Sum<&'a Bin> for Bin {
+    fn sum<I: Iterator<Item = &'a Bin>>(iter: I) -> Self {
+        iter.fold(Bin::default(), |acc, bin| Bin {
+            bbox: acc.bbox.union(bin.bbox),
+            count: acc.count + bin.count,
+        })
+    }
+}
+
 impl Tree {
     /// Adds a new leaf node to the Tree, returning the index for use in creation and intersection
     #[inline]
@@ -163,7 +181,7 @@ impl Tree {
             }
 
             // set up costs
-            let mut costs = [f32::MAX; NUM_BINS - 1];
+            let mut costs = [0.0; NUM_BINS - 1];
 
             // Using two scans of the items, we can compute the SAH cost
             // `SurfaceArea_Left * Num_Left + SurfaceArea_Right * Num_Right`
@@ -172,26 +190,19 @@ impl Tree {
             // operand using the backward scan. We reuse the [Bin] struct
             // as it holds exactly the info needed for cost computation
 
-            let mut acc = Bin::default();
-            // forward scan uses the first bin up to second-to-last bin
-            for bin_idx in 0..(NUM_BINS - 1) {
-                let bin = bins[bin_idx];
-                if bin.count > 0 {
-                    acc.bbox = acc.bbox.union(bin.bbox);
-                    acc.count += bin.count;
-                    costs[bin_idx] += bin.count as f32 * bin.bbox.surface_area();
-                }
-            }
+            // for each binned split point,
+            for (i, cost) in costs.iter_mut().enumerate() {
+                // partition bins at split point
+                let (left, right) = bins.split_at(i + 1);
 
-            acc = Bin::default();
-            // backward scan uses the last bin down to second bin
-            for bin_idx in (1..=(NUM_BINS - 1)).rev() {
-                let bin = bins[bin_idx];
-                if bin.count > 0 {
-                    acc.bbox = acc.bbox.union(bin.bbox);
-                    acc.count += bin.count;
-                    costs[bin_idx - 1] += bin.count as f32 * bin.bbox.surface_area();
-                }
+                // accumulate the partial costs
+                let left_acc = left.iter().sum::<Bin>();
+                let right_acc = right.iter().sum::<Bin>();
+
+                // compute full cost
+                *cost = left_acc.count as f32 * left_acc.bbox.surface_area()
+                    + right_acc.count as f32 * right_acc.bbox.surface_area();
+                debug_assert!(cost.is_finite())
             }
 
             // Find smallest split cost and its index into the bins array
