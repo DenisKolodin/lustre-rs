@@ -42,3 +42,8 @@ lto = "thin"
 [profile.perf]
 inherits = "release"
 debug = true
+
+# run cargo bench --bench <BENCH> -- --plotting-backend plotters
+[[bench]]
+name = "tree"
+harness = false
