@@ -39,7 +39,7 @@ fn bench_hit(c: &mut Criterion) {
     bench_group.sample_size(1000);
 
     // modify scene selection here
-    let scenes_to_check = [scenes::SceneType::CoverPhoto];
+    let scenes_to_check = [scenes::SceneType::CoverPhoto, scenes::SceneType::DebugFinal];
 
     // check against each chosen scene
     for scene in scenes_to_check {
@@ -74,7 +74,7 @@ fn bench_miss(c: &mut Criterion) {
     bench_group.sample_size(1000);
 
     // modify scene selection here
-    let scenes_to_check = [scenes::SceneType::CoverPhoto];
+    let scenes_to_check = [scenes::SceneType::CoverPhoto, scenes::SceneType::DebugFinal];
 
     // check against each chosen scene
     for scene in scenes_to_check {
