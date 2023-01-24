@@ -1,4 +1,4 @@
-use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, PlotConfiguration};
 use lustre::{hittables::Hittable, scenes, tree::Tree};
 use rand::SeedableRng;
 
@@ -67,6 +67,44 @@ fn bench_hit(c: &mut Criterion) {
     }
 }
 
+fn bench_multi_hit(c: &mut Criterion) {
+    // configuration of criterion
+    let mut bench_group = c.benchmark_group("multi_intersect");
+    // log sizes -> log scaling
+    let plot_config = PlotConfiguration::default().summary_scale(criterion::AxisScale::Logarithmic);
+    bench_group.plot_config(plot_config);
+
+    let scene = scenes::SceneType::DebugFinal;
+
+    // tree configuration
+    let mut rng = rand::rngs::SmallRng::seed_from_u64(0);
+    let geo = scenes::get_geometry(scene, &mut rng, 0.0..1.0);
+    let tree = Tree::new(geo, 0.0, 1.0);
+
+    // ray configuration
+    // viewport@ (0.5,0.5) is center of the image. should be guaranteed to hit with specific scenes
+    let mut ray_gen = || lustre::scenes::get_camera(scene).get_ray(0.5, 0.5, &mut rng);
+
+    // correctness check
+    assert!(
+        tree.hit(&ray_gen(), 0.001, f32::INFINITY).is_some(),
+        "ray directed at the center of the scene should hit the scene"
+    );
+
+    // benchmark ray payloads of various sizes
+    for size in [1e1, 1e2, 1e3, 1e4, 1e5].map(|f| f as usize) {
+        bench_group.throughput(criterion::Throughput::Elements(size as u64));
+        let rays: Vec<_> = std::iter::repeat_with(&mut ray_gen).take(size).collect();
+        bench_group.bench_function(BenchmarkId::new("multi_hit", size), |b| {
+            b.iter(|| {
+                for ray in rays.clone() {
+                    tree.hit(&ray, 0.001, f32::INFINITY);
+                }
+            })
+        });
+    }
+}
+
 fn bench_miss(c: &mut Criterion) {
     // configuration of criterion
     let mut bench_group = c.benchmark_group("tree_intersect");
@@ -102,5 +140,5 @@ fn bench_miss(c: &mut Criterion) {
     }
 }
 
-criterion_group! {benches, bench_gen, bench_hit, bench_miss}
+criterion_group! {benches, bench_gen, bench_hit, bench_miss, bench_multi_hit}
 criterion_main!(benches);
