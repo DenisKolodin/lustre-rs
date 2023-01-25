@@ -1,5 +1,5 @@
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, PlotConfiguration};
-use lustre::{hittables::Hittable, scenes, tree::Tree};
+use lustre::{hittables::Hittable, render, scenes, tree::Tree};
 use rand::SeedableRng;
 
 fn bench_gen(c: &mut Criterion) {
@@ -105,6 +105,44 @@ fn bench_multi_hit(c: &mut Criterion) {
     }
 }
 
+fn bench_full_scenes(c: &mut Criterion) {
+    // configuration of criterion
+    let mut bench_group = c.benchmark_group("full_render");
+
+    // these are long-running benchmarks, set up the sampling process for that
+    bench_group.measurement_time(std::time::Duration::from_secs(60));
+
+    // modify scene selection here
+    let scenes_to_check = [
+        scenes::SceneType::CoverPhoto,
+        scenes::SceneType::CornellBox,
+        scenes::SceneType::DebugFinal,
+    ];
+
+    // check against each chosen scene
+    for scene in scenes_to_check {
+        // render configuration
+        let mut rng = rand::rngs::SmallRng::seed_from_u64(0);
+
+        let renderer = render::RenderContext::from_arguments(
+            &lustre::cli::Arguments {
+                output: "output.png".into(),
+                image_width: 100,
+                samples_per_pixel: 100,
+                bounce_depth: 50,
+                scene,
+                seed: Some(0),
+            },
+            &mut rng,
+        );
+
+        let scene_name = format!("{scene:?}");
+        bench_group.bench_function(BenchmarkId::from_parameter(scene_name), |b| {
+            b.iter(|| renderer.render())
+        });
+    }
+}
+
 fn bench_miss(c: &mut Criterion) {
     // configuration of criterion
     let mut bench_group = c.benchmark_group("tree_intersect");
@@ -140,5 +178,5 @@ fn bench_miss(c: &mut Criterion) {
     }
 }
 
-criterion_group! {benches, bench_gen, bench_hit, bench_miss, bench_multi_hit}
+criterion_group! {benches, bench_gen, bench_hit, bench_miss, bench_multi_hit, bench_full_scenes}
 criterion_main!(benches);
