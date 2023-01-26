@@ -106,10 +106,7 @@ impl Quad {
             let p3 = Vec3A::new(x_min, y_max, k);
             (p0, p1, p2, p3)
         } else {
-            panic!(
-                "Points are not zero in the same dimension! {} vs {}",
-                p_min, p_max
-            );
+            panic!("Points are not zero in the same dimension! {p_min} vs {p_max}");
         };
 
         Self::new(p0, p1, p2, p3, m)

@@ -25,7 +25,7 @@ fn main() {
     match img_buf.save(&cli_args.output) {
         Ok(()) => println!("Image written to {:?}", &cli_args.output),
         Err(why) => {
-            eprintln!("Failed to write: {}", why);
+            eprintln!("Failed to write: {why}");
         }
     }
 }
