@@ -101,15 +101,10 @@ impl RenderContext {
             .par_bridge()
             .progress_with(progress_bar)
             .for_each(|(x, y, pixel)| {
-                // map reduce N samples into single Vec3A
-                let mut color_v: Vec3A = (0..self.samples_per_pixel)
-                    .into_par_iter()
-                    .map_init(
-                        // from_rng(...) gives Result, can assume it won't fail
-                        || SmallRng::from_rng(&mut rand::thread_rng()).unwrap(),
-                        // current sample # doesn't matter, ignore
-                        |rng, _| self.compute_pixel_v(x, y, rng),
-                    )
+                let rng = &mut SmallRng::from_rng(&mut rand::thread_rng()).unwrap();
+                // take N samples of pixel, sequentially
+                let mut color_v: Vec3A = std::iter::repeat_with(|| self.compute_pixel_v(x, y, rng))
+                    .take(self.samples_per_pixel as usize)
                     .sum();
 
                 // Account for number of samples
@@ -123,15 +118,10 @@ impl RenderContext {
             .enumerate_pixels_mut()
             .progress_with(progress_bar)
             .for_each(|(x, y, pixel)| {
-                // map reduce N samples into single Vec3A
-                let mut color_v: Vec3A = (0..self.samples_per_pixel)
-                    .map(
-                        // current sample # doesn't matter, ignore
-                        |_| {
-                            let rng = &mut SmallRng::from_rng(&mut rand::thread_rng()).unwrap();
-                            self.compute_pixel_v(x, y, rng)
-                        },
-                    )
+                let rng = &mut SmallRng::from_rng(&mut rand::thread_rng()).unwrap();
+                // take N samples of pixel, sequentially
+                let mut color_v: Vec3A = std::iter::repeat_with(|| self.compute_pixel_v(x, y, rng))
+                    .take(self.samples_per_pixel as usize)
                     .sum();
 
                 // Account for number of samples
