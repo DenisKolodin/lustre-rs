@@ -94,28 +94,13 @@ impl RenderContext {
         // default to f32 to keep hdr data until write time
         let mut img_buf = image::Rgb32FImage::new(self.image_width, self.image_height);
 
-        // Generate image
+        // get (parallel) pixel iterator
+        let enumerated = img_buf.enumerate_pixels_mut();
         #[cfg(feature = "parallel")]
-        img_buf
-            .enumerate_pixels_mut()
-            .par_bridge()
-            .progress_with(progress_bar)
-            .for_each(|(x, y, pixel)| {
-                let rng = &mut SmallRng::from_rng(&mut rand::thread_rng()).unwrap();
-                // take N samples of pixel, sequentially
-                let mut color_v: Vec3A = std::iter::repeat_with(|| self.compute_pixel_v(x, y, rng))
-                    .take(self.samples_per_pixel as usize)
-                    .sum();
+        let enumerated = enumerated.par_bridge();
 
-                // Account for number of samples
-                color_v /= self.samples_per_pixel as f32;
-
-                // modify pixel with generated color value
-                *pixel = color_v.to_pixel();
-            });
-        #[cfg(not(feature = "parallel"))]
-        img_buf
-            .enumerate_pixels_mut()
+        // Generate image
+        enumerated
             .progress_with(progress_bar)
             .for_each(|(x, y, pixel)| {
                 let rng = &mut SmallRng::from_rng(&mut rand::thread_rng()).unwrap();
