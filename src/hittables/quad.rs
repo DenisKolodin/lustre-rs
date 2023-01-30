@@ -122,7 +122,7 @@ impl Hittable for Quad {
         // its an aabb :/
         let min = self.p0.min(self.p1).min(self.p2).min(self.p3) - 0.0001;
         let max = self.p0.max(self.p1).max(self.p2).max(self.p3) + 0.0001;
-        Some(BoundingBox::new(min, max))
+        Some(BoundingBox::new_unchecked(min, max))
     }
 
     fn hit(&self, ray: &crate::ray::Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
