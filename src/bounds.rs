@@ -25,6 +25,11 @@ impl BoundingBox {
         }
     }
 
+    /// Creates a new BoundingBox without input validation
+    pub fn new_unchecked(min: Vec3A, max: Vec3A) -> Self {
+        Self { min, max }
+    }
+
     /// Returns whether or not the ray hits this bounding box.
     ///
     /// Checks for slab intersection in each of the 3 dimensions.
