@@ -59,7 +59,7 @@ impl QuadBox {
 
 impl Hittable for QuadBox {
     fn bounding_box(&self, _time0: f32, _time1: f32) -> Option<BoundingBox> {
-        Some(BoundingBox::new(self.min, self.max))
+        Some(BoundingBox::new_unchecked(self.min, self.max))
     }
 
     fn hit(&self, ray: &crate::ray::Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {

@@ -90,7 +90,7 @@ impl Hittable for Sphere {
     }
 
     fn bounding_box(&self, _time0: f32, _time1: f32) -> Option<crate::bounds::BoundingBox> {
-        Some(BoundingBox::new(
+        Some(BoundingBox::new_unchecked(
             self.center - Vec3A::splat(self.radius),
             self.center + Vec3A::splat(self.radius),
         ))
@@ -184,11 +184,11 @@ impl Hittable for MovingSphere {
     }
 
     fn bounding_box(&self, time0: f32, time1: f32) -> Option<BoundingBox> {
-        let box0 = BoundingBox::new(
+        let box0 = BoundingBox::new_unchecked(
             self.center(time0) - Vec3A::splat(self.radius),
             self.center(time0) + Vec3A::splat(self.radius),
         );
-        let box1 = BoundingBox::new(
+        let box1 = BoundingBox::new_unchecked(
             self.center(time1) - Vec3A::splat(self.radius),
             self.center(time1) + Vec3A::splat(self.radius),
         );
