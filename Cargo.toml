@@ -13,6 +13,7 @@ categories = ["rendering"]
 
 [dependencies]
 clap = { version = "4.1", features = ["derive", "wrap_help"] }
+clap-verbosity-flag = "2.0.0"
 glam = { version = "0.22", features = ["debug-glam-assert", "rand"] }
 image = { version = "0.24", default-features = false, features = [
     "jpeg",
