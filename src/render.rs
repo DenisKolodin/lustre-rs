@@ -32,6 +32,8 @@ pub struct RenderContext {
     geometry: std::sync::Arc<dyn Hittable>,
     /// Whether or not to output HDR images
     output_hdr: bool,
+    /// The level of output verbosity
+    verbosity: crate::cli::Verbosity,
 }
 
 impl RenderContext {
@@ -58,6 +60,7 @@ impl RenderContext {
             bounce_depth: args.bounce_depth,
             samples_per_pixel: args.samples_per_pixel,
             output_hdr,
+            verbosity: args.verbosity.clone(),
         }
     }
 
@@ -89,6 +92,11 @@ impl RenderContext {
     pub fn render(&self) -> DynamicImage {
         let progress_bar = get_progressbar((self.image_height * self.image_width) as u64)
             .with_prefix("Generating pixels");
+
+        // stops the progress bar from outputting anything
+        if self.verbosity.is_silent() {
+            progress_bar.set_draw_target(indicatif::ProgressDrawTarget::hidden());
+        }
 
         // Allocate image buffer
         // default to f32 to keep hdr data until write time

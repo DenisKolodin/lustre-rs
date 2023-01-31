@@ -132,6 +132,7 @@ fn bench_full_scenes(c: &mut Criterion) {
                 bounce_depth: 50,
                 scene,
                 seed: Some(0),
+                verbosity: lustre::cli::Verbosity::new(0, 1),
             },
             &mut rng,
         );

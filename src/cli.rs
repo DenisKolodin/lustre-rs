@@ -2,6 +2,8 @@
 
 use clap::Parser;
 
+pub use clap_verbosity_flag::Verbosity;
+
 use crate::scenes::SceneType;
 
 /// Parses the commandline arguments into an [Arguments] struct
@@ -64,6 +66,9 @@ pub struct Arguments {
     /// The seed used for psuedorandom number generation
     #[clap(long)]
     pub seed: Option<u64>,
+
+    #[clap(flatten)]
+    pub verbosity: self::Verbosity,
 }
 
 /// Checks whether the given integer value is greater than 0
