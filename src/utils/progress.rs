@@ -17,5 +17,5 @@ pub fn get_progressbar(len: u64) -> ProgressBar {
             "[{elapsed_precise}] {spinner} {prefix} {human_pos:>7}/{human_len:7} ({percent}%) {msg}",
         )
         .unwrap(),
-    ).with_finish(ProgressFinish::WithMessage(std::borrow::Cow::Owned("Done!".to_string())))
+    ).with_finish(ProgressFinish::WithMessage("Done!".into()))
 }
